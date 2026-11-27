@@ -6,13 +6,14 @@
     <title>CutPilot</title>
     <script>
       // Apre la lingua del browser se è tra quelle disponibili, altrimenti l'inglese.
-      var langs = ['de', 'it', 'fr', 'en'];
+      var langs = ['de', 'it', 'fr'];
       var wanted = (navigator.languages || [navigator.language || 'en']).map(function (l) { return l.toLowerCase().slice(0, 2); });
-      var match = wanted.filter(function (l) { return langs.indexOf(l) >= 0; })[0] || 'en';
+      var match = wanted.filter(function (l) { return l === 'en' || langs.indexOf(l) >= 0; })[0] || 'en';
+      if (match === 'en') match = 'en-us';
       location.replace('./' + match + '/');
     </script>
   </head>
   <body>
-    <p><a href="./de/">Deutsch</a> · <a href="./it/">Italiano</a> · <a href="./en/">English</a> · <a href="./fr/">Français</a></p>
+    <p><a href="./de/">Deutsch</a> · <a href="./it/">Italiano</a> · <a href="./en-us/">English</a> · <a href="./fr/">Français</a></p>
   </body>
 </html>

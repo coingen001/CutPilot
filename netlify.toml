@@ -7,3 +7,9 @@
   for = "/*"
   [headers.values]
     X-Robots-Tag = "noindex"
+
+# Il vecchio indirizzo inglese porta alla versione per gli Stati Uniti.
+[[redirects]]
+  from = "/en/*"
+  to = "/en-us/:splat"
+  status = 301

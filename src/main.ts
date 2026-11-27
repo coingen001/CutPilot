@@ -6,10 +6,13 @@ import { optimize2D, type Result2D } from './engine/cut2d';
 import { dict, type Lang } from './i18n';
 import { readRows, rowsToParts } from './import';
 
-const lang: Lang = document.documentElement.lang in dict ? (document.documentElement.lang as Lang) : 'en';
+const htmlLang = document.documentElement.lang.toLowerCase();
+const lang: Lang = htmlLang in dict ? (htmlLang as Lang) : 'en-us';
 const t = dict[lang];
 const app = document.getElementById('app')!;
-const STORE = 'cutpilot-v1';
+const inch = t.unit === 'in';
+// Le distinte in pollici e in millimetri si salvano separate.
+const STORE = `cutpilot-v1-${t.unit}`;
 
 interface Row2D { label: string; length: number; width: number; qty: number; rot: boolean }
 interface Row1D { label: string; length: number; qty: number }
@@ -26,8 +29,8 @@ const blank1d = (): Row1D => ({ label: '', length: 0, qty: 1 });
 
 let state: State = {
   mode: '2d',
-  sheet: { stockLength: 2800, stockWidth: 2070, kerf: 3.2, trim: 10, grain: false },
-  bar: { stockLength: 6000, kerf: 3, trim: 0 },
+  sheet: inch ? { stockLength: 96, stockWidth: 48, kerf: 0.125, trim: 0, grain: false } : { stockLength: 2800, stockWidth: 2070, kerf: 3.2, trim: 10, grain: false },
+  bar: inch ? { stockLength: 96, kerf: 0.125, trim: 0 } : { stockLength: 6000, kerf: 3, trim: 0 },
   parts2d: [blank2d()],
   parts1d: [blank1d()],
 };
@@ -40,7 +43,7 @@ let message = '';
 let result: { kind: '2d'; data: Result2D } | { kind: '1d'; data: Result1D } | null = null;
 
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
-const fmt = (n: number) => (lang === 'en' ? String(+n.toFixed(1)) : String(+n.toFixed(1)).replace('.', ','));
+const fmt = (n: number) => (inch ? String(+n.toFixed(3)) : String(+n.toFixed(1)).replace('.', ','));
 const TINTS = ['#cfe3d8', '#f6dfb4', '#dde6ea', '#a9cdbb', '#fbeed3', '#e7eae3', '#8fbfa8', '#eccf94'];
 const tint = (n: number) => TINTS[(n - 1) % TINTS.length];
 const num = (key: string, value: number, labelText: string) =>
@@ -103,7 +106,7 @@ function sheetSvg(sheet: Result2D['sheets'][number], L: number, W: number, idOf:
     })
     .join('');
   const offcuts = sheet.offcuts.map((o) => `<rect x="${o.x}" y="${o.y}" width="${o.length}" height="${o.width}" fill="url(#hatch)"/>`).join('');
-  return `<svg viewBox="${-m} ${-m} ${L + m * 1.15} ${W + m * 1.15}" class="sheet" role="img"><defs><pattern id="hatch" width="${fs}" height="${fs}" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="${fs}" stroke="#b9c4be" stroke-width="${fs / 7}"/></pattern></defs><text x="${L / 2}" y="${-m * 0.4}" font-size="${fs}" text-anchor="middle" fill="#5d6b64">${fmt(L)} mm</text><text transform="translate(${-m * 0.4} ${W / 2}) rotate(-90)" font-size="${fs}" text-anchor="middle" fill="#5d6b64">${fmt(W)} mm</text><rect width="${L}" height="${W}" fill="#fff" stroke="#0f3f31" stroke-width="${fs / 4}"/>${offcuts}${parts}</svg>`;
+  return `<svg viewBox="${-m} ${-m} ${L + m * 1.15} ${W + m * 1.15}" class="sheet" role="img"><defs><pattern id="hatch" width="${fs}" height="${fs}" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="${fs}" stroke="#b9c4be" stroke-width="${fs / 7}"/></pattern></defs><text x="${L / 2}" y="${-m * 0.4}" font-size="${fs}" text-anchor="middle" fill="#5d6b64">${fmt(L)} ${t.unit}</text><text transform="translate(${-m * 0.4} ${W / 2}) rotate(-90)" font-size="${fs}" text-anchor="middle" fill="#5d6b64">${fmt(W)} ${t.unit}</text><rect width="${L}" height="${W}" fill="#fff" stroke="#0f3f31" stroke-width="${fs / 4}"/>${offcuts}${parts}</svg>`;
 }
 
 function legend(items: Piece[], idOf: (p: Piece) => number): string {
@@ -111,7 +114,7 @@ function legend(items: Piece[], idOf: (p: Piece) => number): string {
   for (const p of items) {
     const n = idOf(p);
     const dims = p.width === undefined ? fmt(p.length) : p.rotated ? `${fmt(p.width)} × ${fmt(p.length)}` : `${fmt(p.length)} × ${fmt(p.width)}`;
-    const row = rows.get(n) ?? { text: `${p.label ? esc(p.label) + ' · ' : ''}${dims} mm${p.rotated ? ` (${t.rotated})` : ''}`, count: 0 };
+    const row = rows.get(n) ?? { text: `${p.label ? esc(p.label) + ' · ' : ''}${dims} ${t.unit}${p.rotated ? ` (${t.rotated})` : ''}`, count: 0 };
     row.count++;
     rows.set(n, row);
   }
@@ -151,7 +154,7 @@ function results(): string {
   )}</div>${bars
     .map(
       (b, i) =>
-        `<article class="plan"><h3>${t.barN(i + 1, bars.length)} · ${t.rest} ${fmt(b.rest)} mm</h3><svg viewBox="0 0 ${L} ${h}" class="bar" role="img"><defs><pattern id="hatch1" width="${h / 5}" height="${h / 5}" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="${h / 5}" stroke="#b9c4be" stroke-width="${h / 30}"/></pattern></defs><rect width="${L}" height="${h}" fill="url(#hatch1)" stroke="#0f3f31" stroke-width="${h / 14}"/>${b.cuts
+        `<article class="plan"><h3>${t.barN(i + 1, bars.length)} · ${t.rest} ${fmt(b.rest)} ${t.unit}</h3><svg viewBox="0 0 ${L} ${h}" class="bar" role="img"><defs><pattern id="hatch1" width="${h / 5}" height="${h / 5}" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="${h / 5}" stroke="#b9c4be" stroke-width="${h / 30}"/></pattern></defs><rect width="${L}" height="${h}" fill="url(#hatch1)" stroke="#0f3f31" stroke-width="${h / 14}"/>${b.cuts
           .map(
             (c) =>
               `<rect x="${c.offset}" y="0" width="${c.length}" height="${h}" fill="${tint(idOf(c))}" stroke="#0f3f31" stroke-width="${h / 22}"/>${
@@ -217,18 +220,13 @@ function run() {
   if (result) document.getElementById('results')!.scrollIntoView({ behavior: 'smooth' });
 }
 
-const example2d: Row2D[] = [
-  { label: t.ex[0], length: 2000, width: 560, qty: 2, rot: false },
-  { label: t.ex[1], length: 764, width: 540, qty: 5, rot: false },
-  { label: t.ex[2], length: 800, width: 560, qty: 2, rot: false },
-  { label: t.ex[3], length: 1996, width: 397, qty: 2, rot: false },
-  { label: t.ex[4], length: 764, width: 100, qty: 2, rot: true },
-];
-const example1d: Row1D[] = [
-  { label: t.ex[5], length: 2100, qty: 6 },
-  { label: t.ex[6], length: 1250, qty: 8 },
-  { label: t.ex[7], length: 640, qty: 10 },
-];
+// Esempi: stesso armadio e stesso telaio, in millimetri o in pollici.
+const dims2d = inch
+  ? [[78, 22, 2], [30, 21, 5], [31.5, 22, 2], [78, 15.5, 2], [30, 4, 2]]
+  : [[2000, 560, 2], [764, 540, 5], [800, 560, 2], [1996, 397, 2], [764, 100, 2]];
+const example2d: Row2D[] = dims2d.map(([length, width, qty], i) => ({ label: t.ex[i], length, width, qty, rot: i === 4 }));
+const dims1d = inch ? [[82, 6], [49, 8], [25, 10]] : [[2100, 6], [1250, 8], [640, 10]];
+const example1d: Row1D[] = dims1d.map(([length, qty], i) => ({ label: t.ex[5 + i], length, qty }));
 
 // Un input modificato aggiorna lo stato senza ridisegnare, per non perdere il cursore.
 app.addEventListener('input', (e) => {
@@ -299,8 +297,9 @@ render();
 // Figura d'apertura: uno schema vero, calcolato dal motore sull'esempio dell'armadio.
 const hero = document.getElementById('hero-figure');
 if (hero) {
-  const demo = optimize2D(example2d.map((r) => ({ label: r.label, length: r.length, width: r.width, qty: r.qty })), { stockLength: 2800, stockWidth: 2070, kerf: 3.2, trim: 10 });
-  hero.innerHTML = sheetSvg(demo.sheets[0], 2800, 2070, numbering(demo.sheets.flatMap((sh) => sh.placed)), 2);
+  const defaults = inch ? { stockLength: 96, stockWidth: 48, kerf: 0.125, trim: 0 } : { stockLength: 2800, stockWidth: 2070, kerf: 3.2, trim: 10 };
+  const demo = optimize2D(example2d.map((r) => ({ label: r.label, length: r.length, width: r.width, qty: r.qty })), defaults);
+  hero.innerHTML = sheetSvg(demo.sheets[0], defaults.stockLength, defaults.stockWidth, numbering(demo.sheets.flatMap((sh) => sh.placed)), 2);
 }
 document.querySelector('[data-hero-example]')?.addEventListener('click', () => {
   state.mode = '2d';

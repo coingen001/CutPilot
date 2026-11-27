@@ -1,6 +1,7 @@
-export type Lang = 'de' | 'it' | 'en' | 'fr';
+export type Lang = 'de' | 'it' | 'en-us' | 'fr';
 
 const de = {
+  unit: 'mm' as 'mm' | 'in',
   tab2d: 'Platten (2D)',
   tab1d: 'Stangen & Profile (1D)',
   settings: 'Material',
@@ -41,6 +42,7 @@ const de = {
 };
 
 const it: typeof de = {
+  unit: 'mm',
   tab2d: 'Pannelli (2D)',
   tab1d: 'Barre e profilati (1D)',
   settings: 'Materiale',
@@ -82,14 +84,15 @@ const it: typeof de = {
 
 
 const en: typeof de = {
+  unit: 'in',
   tab2d: 'Panels (2D)',
   tab1d: 'Bars & profiles (1D)',
   settings: 'Material',
-  stockLength: 'Length (mm)',
-  stockWidth: 'Width (mm)',
-  kerf: 'Blade thickness (mm)',
-  trim: 'Edge trim per side (mm)',
-  trim1d: 'Trim at bar start (mm)',
+  stockLength: 'Length (in)',
+  stockWidth: 'Width (in)',
+  kerf: 'Blade kerf (in)',
+  trim: 'Edge trim per side (in)',
+  trim1d: 'Trim at bar start (in)',
   grain: 'Panel has grain (set rotation per part)',
   parts: 'Cut list',
   label: 'Description',
@@ -122,6 +125,7 @@ const en: typeof de = {
 };
 
 const fr: typeof de = {
+  unit: 'mm',
   tab2d: 'Panneaux (2D)',
   tab1d: 'Barres et profilés (1D)',
   settings: 'Matériau',
@@ -161,5 +165,5 @@ const fr: typeof de = {
   ex: ['Côté', 'Étagère', 'Dessus/dessous', 'Porte', 'Plinthe', 'Montant', 'Traverse', 'Renfort'],
 };
 
-export const dict = { de, it, en, fr };
+export const dict = { de, it, 'en-us': en, fr };
 export type Dict = typeof de;
