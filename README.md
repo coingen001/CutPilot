@@ -33,3 +33,16 @@ npm run build    # sito statico in dist/
 - Nessun confronto ancora fatto con i risultati dei concorrenti.
 - Niente account, pagamenti o salvataggio in cloud: fuori dal perimetro di questa versione.
 - I tag `hreflang` vanno aggiunti alle pagine `de/` e `it/` con URL assoluti quando il dominio è scelto.
+
+## Confronto con i concorrenti
+
+`bench/distinte/` contiene 12 distinte di prova (8 pannelli, 4 barre). `npm run bench` calcola per ognuna
+il risultato di CutPilot e il limite teorico, e scrive `bench/risultati-cutpilot.csv`.
+
+Parametri da usare uguali nei programmi concorrenti:
+
+- Pannelli: 2800 × 2070 mm, lama 4 mm, rifilo 10 mm per bordo, tutti i pezzi ruotabili.
+- Barre: 6000 mm, lama 3 mm, nessun rifilo.
+
+Il limite teorico è un minimo calcolato su area o lunghezza: nessun programma può scendere sotto,
+ma spesso non è raggiungibile. Il confronto che conta è con i concorrenti.
