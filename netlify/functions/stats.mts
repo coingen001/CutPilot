@@ -12,6 +12,10 @@ const LABELS: Record<string, string> = {
   limit: "Tentativi di salvare un progetto",
   plan_click: "Clic su PRO/Business",
   waitlist: "Iscritti lista d'attesa",
+  pro_remnants: "PRO: calcoli con scarti",
+  pro_stock: "PRO: magazzino aggiornato",
+  pro_cost: "PRO: calcoli con prezzo",
+  pro_labels: "PRO: etichette stampate",
 };
 
 const STYLE = `<style>body{font-family:system-ui,sans-serif;margin:20px;color:#14211c}table{border-collapse:collapse;margin:12px 0 32px;font-size:14px}th,td{border:1px solid #d5ddd8;padding:6px 9px;text-align:right}td:first-child,th:first-child{text-align:left}th{background:#f2f5f3}div{overflow-x:auto}form{max-width:320px;margin-top:15vh}input,button{display:block;width:100%;box-sizing:border-box;font:inherit;padding:10px;margin-top:10px;border:1px solid #c5d0ca;border-radius:6px}button{background:#0f5a44;color:#fff;border:0;cursor:pointer}.err{color:#a3261c}</style>`;

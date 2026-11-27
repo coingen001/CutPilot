@@ -19,12 +19,17 @@ const STORE = `cutpilot-v1-${t.unit}-${preset.key ?? 'home'}`;
 
 interface Row2D { label: string; length: number; width: number; qty: number; rot: boolean }
 interface Row1D { label: string; length: number; qty: number }
+interface Rem2D { length: number; width: number; qty: number }
+interface Rem1D { length: number; qty: number }
 interface State {
   mode: '2d' | '1d';
   sheet: { stockLength: number; stockWidth: number; kerf: number; trim: number; grain: boolean };
   bar: { stockLength: number; kerf: number; trim: number };
   parts2d: Row2D[];
   parts1d: Row1D[];
+  pro: { useRemnants: boolean; priceSheet: number; priceBar: number };
+  remnants2d: Rem2D[];
+  remnants1d: Rem1D[];
 }
 
 const blank2d = (): Row2D => ({ label: '', length: 0, width: 0, qty: 1, rot: true });
@@ -36,6 +41,9 @@ let state: State = {
   bar: inch ? { stockLength: 96, kerf: 0.125, trim: 0 } : { stockLength: 6000, kerf: 3, trim: 0 },
   parts2d: [blank2d()],
   parts1d: [blank1d()],
+  pro: { useRemnants: false, priceSheet: 0, priceBar: 0 },
+  remnants2d: [],
+  remnants1d: [],
 };
 state.sheet = { ...state.sheet, ...preset.sheet };
 state.bar = { ...state.bar, ...preset.bar };
@@ -46,12 +54,18 @@ try {
 } catch { /* archivio locale non disponibile: si parte dai valori iniziali */ }
 
 let message = '';
+let stockDone = false; // il magazzino è già stato aggiornato con questo risultato
 let result: { kind: '2d'; data: Result2D } | { kind: '1d'; data: Result1D } | null = null;
 
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
 const decimal = (n: number) => (lang === 'en-us' ? String(+n.toFixed(1)) : String(+n.toFixed(1)).replace('.', ','));
 // Misure: frazioni di pollice negli Stati Uniti, millimetri altrove.
 const fmt = (n: number) => (inch ? formatInch(n) : decimal(n));
+const money = (n: number) => new Intl.NumberFormat(inch ? 'en-US' : lang, { style: 'currency', currency: inch ? 'USD' : 'EUR' }).format(n);
+// Un avanzo entra in magazzino solo se è utilizzabile: lato minore almeno 150 mm (6") per i pannelli, 300 mm (12") per le barre.
+const MIN_OFFCUT = inch ? 6 : 150;
+const MIN_REST = inch ? 12 : 300;
+const floorDim = (n: number) => (inch ? Math.floor(n * 32 + 1e-6) / 32 : Math.floor(n * 10 + 1e-6) / 10);
 const TINTS = ['#cfe3d8', '#f6dfb4', '#dde6ea', '#a9cdbb', '#fbeed3', '#e7eae3', '#8fbfa8', '#eccf94'];
 const tint = (n: number) => TINTS[(n - 1) % TINTS.length];
 // Nelle impostazioni lo zero si mostra (lama 0 per il vetro); nella distinta una misura vuota resta vuota.
@@ -154,25 +168,36 @@ function results(): string {
     const { stockLength: L, stockWidth: W } = state.sheet;
     const idOf = numbering(sheets.flatMap((s) => s.placed));
     const best = sheets.flatMap((s) => s.offcuts.slice(0, 1)).sort((a, b) => b.length * b.width - a.length * a.width)[0];
-    return `${unplaced}<div class="stats">${stat(t.sheets, String(sheets.length))}${stat(t.waste, decimal(wastePct) + ' %')}${stat(
+    const fresh = sheets.filter((s) => !s.remnant).length;
+    const reused = sheets.filter((s) => s.remnant);
+    const price = state.pro.priceSheet;
+    const saved = reused.reduce((sum, s) => sum + (s.length * s.width) / (L * W), 0) * price;
+    return `${unplaced}<div class="stats">${stat(t.sheets, String(fresh))}${reused.length ? stat(t.remnantsUsed, String(reused.length)) : ''}${stat(t.waste, decimal(wastePct) + ' %')}${stat(
       t.placed,
       String(sheets.reduce((s, sh) => s + sh.placed.length, 0)),
-    )}${best ? stat(t.bestOffcut, `${fmt(best.length)} × ${fmt(best.width)}`) : ''}</div>${sheets
-      .map((s, i) => `<article class="plan"><h3>${t.sheetN(i + 1, sheets.length)}</h3>${sheetSvg(s, L, W, idOf)}${legend(s.placed, idOf)}</article>`)
+    )}${best ? stat(t.bestOffcut, `${fmt(best.length)} × ${fmt(best.width)}`) : ''}${price > 0 ? stat(t.cost, money(fresh * price)) : ''}${price > 0 && saved > 0 ? stat(t.saving, money(saved)) : ''}</div>${sheets
+      .map(
+        (s, i) =>
+          `<article class="plan"><h3>${t.sheetN(i + 1, sheets.length)}${s.remnant ? ` · ${t.fromStock} ${fmt(s.length)} × ${fmt(s.width)}` : ''}</h3>${sheetSvg(s, s.length, s.width, idOf).replace('<svg ', `<svg style="width:${Math.max(30, (s.length / L) * 100)}%" `)}${legend(s.placed, idOf)}</article>`,
+      )
       .join('')}`;
   }
 
   const { bars, wastePct } = result.data;
-  const L = state.bar.stockLength;
+  const L = Math.max(state.bar.stockLength, ...bars.map((b) => b.stockLength));
   const h = L / 26;
   const idOf = numbering(bars.flatMap((b) => b.cuts));
-  return `${unplaced}<div class="stats">${stat(t.bars, String(bars.length))}${stat(t.waste, decimal(wastePct) + ' %')}${stat(
+  const fresh = bars.filter((b) => !b.remnant).length;
+  const reused = bars.filter((b) => b.remnant);
+  const price = state.pro.priceBar;
+  const saved = (reused.reduce((sum, b) => sum + b.stockLength, 0) / state.bar.stockLength) * price;
+  return `${unplaced}<div class="stats">${stat(t.bars, String(fresh))}${reused.length ? stat(t.remnantsUsed, String(reused.length)) : ''}${stat(t.waste, decimal(wastePct) + ' %')}${stat(
     t.placed,
     String(bars.reduce((s, b) => s + b.cuts.length, 0)),
-  )}</div>${bars
+  )}${price > 0 ? stat(t.cost, money(fresh * price)) : ''}${price > 0 && saved > 0 ? stat(t.saving, money(saved)) : ''}</div>${bars
     .map(
       (b, i) =>
-        `<article class="plan"><h3>${t.barN(i + 1, bars.length)} · ${t.rest} ${fmt(b.rest)} ${t.unit}</h3><svg viewBox="0 0 ${L} ${h}" class="bar" role="img"><defs><pattern id="hatch1" width="${h / 5}" height="${h / 5}" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="${h / 5}" stroke="#b9c4be" stroke-width="${h / 30}"/></pattern></defs><rect width="${L}" height="${h}" fill="url(#hatch1)" stroke="#0f3f31" stroke-width="${h / 14}"/>${b.cuts
+        `<article class="plan"><h3>${t.barN(i + 1, bars.length)}${b.remnant ? ` · ${t.fromStock} ${fmt(b.stockLength)} ${t.unit}` : ''} · ${t.rest} ${fmt(b.rest)} ${t.unit}</h3><svg viewBox="0 0 ${L} ${h}" class="bar" role="img"><defs><pattern id="hatch1" width="${h / 5}" height="${h / 5}" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="${h / 5}" stroke="#b9c4be" stroke-width="${h / 30}"/></pattern></defs><rect width="${b.stockLength}" height="${h}" fill="url(#hatch1)" stroke="#0f3f31" stroke-width="${h / 14}"/>${b.cuts
           .map(
             (c) =>
               `<rect x="${c.offset}" y="0" width="${c.length}" height="${h}" fill="${tint(idOf(c))}" stroke="#0f3f31" stroke-width="${h / 22}"/>${
@@ -191,6 +216,30 @@ function projectsBlock(): string {
   return `<section class="projects">
       <button data-act="save-project">${t.saveProject}</button>
       ${overLimit ? `<div class="upgrade"><p>${t.limit}</p><a class="btn primary" href="${app.dataset.pricing ?? '#'}">${t.seePlans}</a></div>` : ''}
+    </section>`;
+}
+
+// Strumenti PRO: magazzino scarti e prezzo del materiale. Durante l'anteprima sono aperti a tutti.
+function proBlock(): string {
+  const is2d = state.mode === '2d';
+  const list: (Rem2D | Rem1D)[] = is2d ? state.remnants2d : state.remnants1d;
+  const rows = list
+    .map(
+      (r, i) =>
+        `<tr><td><input ${dimAttrs(r.length)} data-rrow="${i}" data-field="length" aria-label="${t.length}"></td>${
+          is2d ? `<td><input ${dimAttrs((r as Rem2D).width)} data-rrow="${i}" data-field="width" aria-label="${t.width}"></td>` : ''
+        }<td><input type="number" inputmode="numeric" min="0" step="1" value="${r.qty || ''}" data-rrow="${i}" data-field="qty" aria-label="${t.qty}"></td><td><button class="icon" data-rdel="${i}" aria-label="${t.remove}">×</button></td></tr>`,
+    )
+    .join('');
+  const table = list.length
+    ? `<table class="parts"><thead><tr><th>${t.length}</th>${is2d ? `<th>${t.width}</th>` : ''}<th>${t.qty}</th><th></th></tr></thead><tbody>${rows}</tbody></table>`
+    : `<p class="hint">${t.noRemnants}</p>`;
+  const priceKey = is2d ? 'priceSheet' : 'priceBar';
+  return `<section class="pro">
+      <h2>${t.proTitle} <span class="badge">${t.proBadge}</span></h2>
+      <label class="check"><input type="checkbox" data-set="pro.useRemnants" ${state.pro.useRemnants ? 'checked' : ''}> ${t.useRemnants}</label>
+      ${state.pro.useRemnants ? `${table}<div class="actions"><button data-act="add-remnant">${t.addRemnant}</button></div><p class="hint">${t.remnantsHint}</p>` : ''}
+      <div class="grid"><label>${is2d ? t.priceSheet : t.priceBar}<input type="number" inputmode="decimal" min="0" step="any" value="${state.pro[priceKey] || ''}" data-set="pro.${priceKey}"></label></div>
     </section>`;
 }
 
@@ -226,26 +275,37 @@ function render() {
       <p class="hint">${t.importHint}</p>
       ${message ? `<p class="msg">${message}</p>` : ''}
     </section>
+    ${proBlock()}
     <button class="primary" data-act="run">${t.run}</button>
     ${projectsBlock()}
   </div>
-  <section id="results">${results()}${result ? `<button class="no-print" data-act="print">${t.print}</button>` : ''}</section>`;
+  <section id="results">${results()}${
+    result
+      ? `<div class="actions no-print"><button data-act="print">${t.print}</button><button data-act="labels">${t.printLabels}</button>${
+          stockDone ? '' : `<button data-act="update-stock">${t.updateStock}</button>`
+        }</div>`
+      : ''
+  }</section>`;
 }
 
 function run() {
   track('run');
   message = '';
+  stockDone = false;
+  const useRem = state.pro.useRemnants;
   if (state.mode === '2d') {
     const parts = state.parts2d
       .filter((r) => r.length > 0 && r.width > 0 && r.qty > 0)
       .map((r) => ({ label: r.label, length: r.length, width: r.width, qty: r.qty, canRotate: state.sheet.grain ? r.rot : true }));
     if (!parts.length) message = t.empty;
-    result = parts.length ? { kind: '2d', data: optimize2D(parts, state.sheet) } : null;
+    result = parts.length ? { kind: '2d', data: optimize2D(parts, { ...state.sheet, remnants: useRem ? state.remnants2d : [] }) } : null;
   } else {
     const parts = state.parts1d.filter((r) => r.length > 0 && r.qty > 0);
     if (!parts.length) message = t.empty;
-    result = parts.length ? { kind: '1d', data: optimize1D(parts, state.bar) } : null;
+    result = parts.length ? { kind: '1d', data: optimize1D(parts, { ...state.bar, remnants: useRem ? state.remnants1d : [] }) } : null;
   }
+  if (result && useRem) track('pro_remnants');
+  if (result && (state.mode === '2d' ? state.pro.priceSheet : state.pro.priceBar) > 0) track('pro_cost');
   render();
   if (result) document.getElementById('results')!.scrollIntoView({ behavior: 'smooth' });
 }
@@ -263,9 +323,12 @@ app.addEventListener('input', (e) => {
   const el = e.target as HTMLInputElement;
   const value = el.type === 'checkbox' ? el.checked : el.dataset.dim !== undefined ? parseDim(el.value) || 0 : el.type === 'number' ? Number(el.value) || 0 : el.value;
   if (el.dataset.set) {
-    const [group, key] = el.dataset.set.split('.') as ['sheet' | 'bar', string];
+    const [group, key] = el.dataset.set.split('.') as ['sheet' | 'bar' | 'pro', string];
     (state[group] as Record<string, unknown>)[key] = value;
-    if (el.dataset.set === 'sheet.grain') render();
+    if (el.dataset.set === 'sheet.grain' || el.dataset.set === 'pro.useRemnants') render();
+  } else if (el.dataset.rrow) {
+    const rows = (state.mode === '2d' ? state.remnants2d : state.remnants1d) as unknown as Record<string, unknown>[];
+    rows[Number(el.dataset.rrow)][el.dataset.field!] = value;
   } else if (el.dataset.row) {
     const rows = (state.mode === '2d' ? state.parts2d : state.parts1d) as unknown as Record<string, unknown>[];
     rows[Number(el.dataset.row)][el.dataset.field!] = value;
@@ -333,6 +396,15 @@ app.addEventListener('click', (e) => {
     state.mode = el.dataset.mode as State['mode'];
     result = null;
     message = '';
+  } else if (el.dataset.rdel) {
+    (is2d ? state.remnants2d : state.remnants1d).splice(Number(el.dataset.rdel), 1);
+  } else if (el.dataset.act === 'add-remnant') {
+    if (is2d) state.remnants2d.push({ length: 0, width: 0, qty: 1 });
+    else state.remnants1d.push({ length: 0, qty: 1 });
+  } else if (el.dataset.act === 'update-stock') {
+    updateStock();
+  } else if (el.dataset.act === 'labels') {
+    return printLabels();
   } else if (el.dataset.del) {
     (is2d ? state.parts2d : state.parts1d).splice(Number(el.dataset.del), 1);
   } else if (el.dataset.act === 'add') {
@@ -360,6 +432,73 @@ app.addEventListener('click', (e) => {
   save();
   render();
 });
+
+// Aggiorna il magazzino: toglie gli scarti appena usati e aggiunge gli avanzi utilizzabili di questo taglio.
+function updateStock() {
+  if (!result) return;
+  let out = 0;
+  let added = 0;
+  const same = (a: number, b: number) => Math.abs(a - b) < 1e-6;
+  if (result.kind === '2d') {
+    for (const s of result.data.sheets) {
+      const r = s.remnant && state.remnants2d.find((x) => x.qty > 0 && same(x.length, s.length) && same(x.width, s.width));
+      if (r) { r.qty--; out++; }
+    }
+    for (const o of result.data.sheets.flatMap((s) => s.offcuts)) {
+      if (Math.min(o.length, o.width) < MIN_OFFCUT) continue;
+      const [length, width] = [floorDim(Math.max(o.length, o.width)), floorDim(Math.min(o.length, o.width))];
+      const r = state.remnants2d.find((x) => same(x.length, length) && same(x.width, width));
+      if (r) r.qty++;
+      else state.remnants2d.push({ length, width, qty: 1 });
+      added++;
+    }
+    state.remnants2d = state.remnants2d.filter((r) => r.qty > 0);
+  } else {
+    for (const b of result.data.bars) {
+      const r = b.remnant && state.remnants1d.find((x) => x.qty > 0 && same(x.length, b.stockLength));
+      if (r) { r.qty--; out++; }
+    }
+    for (const b of result.data.bars) {
+      if (b.rest < MIN_REST) continue;
+      const length = floorDim(b.rest);
+      const r = state.remnants1d.find((x) => same(x.length, length));
+      if (r) r.qty++;
+      else state.remnants1d.push({ length, qty: 1 });
+      added++;
+    }
+    state.remnants1d = state.remnants1d.filter((r) => r.qty > 0);
+  }
+  state.pro.useRemnants = true;
+  stockDone = true;
+  message = t.stockUpdated(out, added);
+  track('pro_stock');
+}
+
+// Etichette: una per pezzo, da attaccare dopo il taglio. Si stampano su A4, tre per riga.
+const labelsEl = document.createElement('div');
+labelsEl.className = 'labels';
+document.body.append(labelsEl);
+window.addEventListener('afterprint', () => document.body.classList.remove('print-labels'));
+
+function printLabels() {
+  if (!result) return;
+  const card = (n: number, p: Piece, where: string) => {
+    const dims = p.width === undefined ? fmt(p.length) : p.rotated ? `${fmt(p.width)} × ${fmt(p.length)}` : `${fmt(p.length)} × ${fmt(p.width)}`;
+    return `<div class="lbl"><b>${n}</b><span>${esc(p.label)}</span><span>${dims} ${t.unit}</span><small>${where}</small></div>`;
+  };
+  let cards: string[];
+  if (result.kind === '2d') {
+    const idOf = numbering(result.data.sheets.flatMap((s) => s.placed));
+    cards = result.data.sheets.flatMap((s, i) => s.placed.map((p) => card(idOf(p), p, t.labelSheet(i + 1))));
+  } else {
+    const idOf = numbering(result.data.bars.flatMap((b) => b.cuts));
+    cards = result.data.bars.flatMap((b, i) => b.cuts.map((c) => card(idOf(c), c, t.labelBar(i + 1))));
+  }
+  labelsEl.innerHTML = cards.join('');
+  document.body.classList.add('print-labels');
+  track('pro_labels');
+  window.print();
+}
 
 render();
 

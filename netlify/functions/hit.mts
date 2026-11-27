@@ -3,7 +3,7 @@
 import { getStore } from "@netlify/blobs";
 import type { Config } from "@netlify/functions";
 
-const EVENTS = new Set(["view", "run", "example", "import", "limit", "plan_click", "waitlist"]);
+const EVENTS = new Set(["view", "run", "example", "import", "limit", "plan_click", "waitlist", "pro_remnants", "pro_stock", "pro_cost", "pro_labels"]);
 
 export default async (req: Request) => {
   let data: { e?: unknown; p?: unknown };

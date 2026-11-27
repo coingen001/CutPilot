@@ -10,6 +10,7 @@ export interface Opts1D {
   stockLength: number;
   kerf?: number; // spessore lama
   trim?: number; // rifilo iniziale della barra
+  remnants?: { length: number; qty: number }[]; // spezzoni in magazzino, usati come barre senza rifilo
 }
 
 export interface Cut1D {
@@ -19,6 +20,8 @@ export interface Cut1D {
 }
 
 export interface Bar {
+  stockLength: number; // lunghezza della barra o dello spezzone usato
+  remnant: boolean; // true se è uno spezzone preso dal magazzino
   cuts: Cut1D[];
   rest: number; // spezzone riutilizzabile a fine barra
 }
@@ -51,7 +54,10 @@ export function optimize1D(parts: Part1D[], opts: Opts1D): Result1D {
 
   // Best Fit Decreasing. Ogni pezzo consuma lunghezza + lama; la capacità è
   // usable + kerf perché l'ultimo pezzo può finire a filo barra senza taglio.
-  const open: { cuts: Cut1D[]; remaining: number; cursor: number }[] = [];
+  // Gli spezzoni in magazzino sono già "aperti": il Best Fit li riempie prima di prendere barre nuove.
+  const open: { cuts: Cut1D[]; remaining: number; cursor: number; stock: number; rem: boolean }[] = (opts.remnants ?? []).flatMap((r) =>
+    r.length > 0 ? Array.from({ length: Math.max(0, Math.floor(r.qty)) }, () => ({ cuts: [], remaining: r.length + kerf, cursor: 0, stock: r.length, rem: true })) : [],
+  );
   for (const it of items) {
     const need = it.length + kerf;
     let best = -1;
@@ -59,7 +65,7 @@ export function optimize1D(parts: Part1D[], opts: Opts1D): Result1D {
       if (need <= open[i].remaining + EPS && (best < 0 || open[i].remaining < open[best].remaining)) best = i;
     }
     if (best < 0) {
-      open.push({ cuts: [], remaining: usable + kerf, cursor: trim });
+      open.push({ cuts: [], remaining: usable + kerf, cursor: trim, stock: opts.stockLength, rem: false });
       best = open.length - 1;
     }
     const bar = open[best];
@@ -68,8 +74,10 @@ export function optimize1D(parts: Part1D[], opts: Opts1D): Result1D {
     bar.remaining -= need;
   }
 
-  const bars: Bar[] = open.map((b) => ({ cuts: b.cuts, rest: Math.max(0, b.remaining - kerf) }));
+  const bars: Bar[] = open
+    .filter((b) => b.cuts.length > 0)
+    .map((b) => ({ stockLength: b.stock, remnant: b.rem, cuts: b.cuts, rest: Math.max(0, b.remaining - kerf) }));
   const partsLength = items.reduce((s, it) => s + it.length, 0);
-  const total = bars.length * opts.stockLength;
+  const total = bars.reduce((sum, b) => sum + b.stockLength, 0);
   return { bars, unplaced, wastePct: total > 0 ? (1 - partsLength / total) * 100 : 0 };
 }

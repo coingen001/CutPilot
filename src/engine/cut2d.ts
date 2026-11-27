@@ -14,6 +14,13 @@ export interface Opts2D {
   stockWidth: number;
   kerf?: number; // spessore lama
   trim?: number; // rifilo su ogni bordo
+  remnants?: Remnant2D[]; // scarti in magazzino, usati prima dei pannelli nuovi (senza rifilo)
+}
+
+export interface Remnant2D {
+  length: number;
+  width: number;
+  qty: number;
 }
 
 export interface Placed {
@@ -33,6 +40,9 @@ export interface Rect {
 }
 
 export interface Sheet {
+  length: number; // misure del pannello usato
+  width: number;
+  remnant: boolean; // true se è uno scarto preso dal magazzino
   placed: Placed[];
   offcuts: Rect[]; // ritagli liberi, dal più grande
 }
@@ -70,8 +80,14 @@ type Split = 'shorterAxis' | 'longerAxis' | 'shorterLeftover' | 'longerLeftover'
 const CHOICES: Choice[] = ['shortSide', 'area'];
 const SPLITS: Split[] = ['shorterAxis', 'longerAxis', 'shorterLeftover', 'longerLeftover'];
 
-function pack(items: Item[], W: number, H: number, kerf: number, choice: Choice, split: Split) {
-  const sheets: { free: Free[]; placed: Placed[]; used: number }[] = [];
+function pack(items: Item[], W: number, H: number, kerf: number, choice: Choice, split: Split, rems: { w: number; h: number }[]) {
+  // Gli scarti sono già aperti in testa: i pezzi li riempiono prima di aprire pannelli nuovi.
+  const sheets: { free: Free[]; placed: Placed[]; used: number; rem: { w: number; h: number } | null }[] = rems.map((r) => ({
+    free: [{ x: 0, y: 0, w: r.w, h: r.h }],
+    placed: [],
+    used: 0,
+    rem: r,
+  }));
   for (const it of items) {
     const rotations = it.canRotate && it.l !== it.w ? [false, true] : [false];
     let target: { s: number; f: number; rot: boolean } | null = null;
@@ -93,7 +109,7 @@ function pack(items: Item[], W: number, H: number, kerf: number, choice: Choice,
       }
     }
     if (!target) {
-      sheets.push({ free: [{ x: 0, y: 0, w: W, h: H }], placed: [], used: 0 });
+      sheets.push({ free: [{ x: 0, y: 0, w: W, h: H }], placed: [], used: 0, rem: null });
       const fitsFlat = it.l + kerf <= W + EPS && it.w + kerf <= H + EPS;
       target = { s: sheets.length - 1, f: 0, rot: !fitsFlat };
     }
@@ -143,8 +159,13 @@ export function optimize2D(parts: Part2D[], opts: Opts2D): Result2D {
     for (let i = 0; i < qty; i++) items.push({ label: p.label, l: p.length, w: p.width, canRotate });
   }
 
+  // Scarti dal più piccolo: un pezzo va nello scarto più piccolo che lo contiene.
+  const rems = (opts.remnants ?? [])
+    .flatMap((r) => (r.length > 0 && r.width > 0 ? Array.from({ length: Math.max(0, Math.floor(r.qty)) }, () => ({ w: r.length + kerf, h: r.width + kerf })) : []))
+    .sort((a, b) => a.w * a.h - b.w * b.h);
+
   // Prova tutte le combinazioni di euristiche e tiene la migliore:
-  // meno pannelli, poi il pannello meno pieno più vuoto possibile (ritaglio più utile).
+  // meno pannelli nuovi, poi il pannello nuovo meno pieno più vuoto possibile (ritaglio più utile).
   let best: ReturnType<typeof pack> = [];
   let bestKey = [Infinity, Infinity];
   if (items.length > 0) {
@@ -152,8 +173,9 @@ export function optimize2D(parts: Part2D[], opts: Opts2D): Result2D {
       const sorted = [...items].sort(sort);
       for (const choice of CHOICES) {
         for (const split of SPLITS) {
-          const sheets = pack(sorted, W, H, kerf, choice, split);
-          const key = [sheets.length, Math.min(...sheets.map((s) => s.used))];
+          const sheets = pack(sorted, W, H, kerf, choice, split, rems).filter((s) => s.placed.length > 0);
+          const fresh = sheets.filter((s) => !s.rem);
+          const key = [fresh.length, fresh.length ? Math.min(...fresh.map((s) => s.used)) : 0];
           if (key[0] < bestKey[0] || (key[0] === bestKey[0] && key[1] < bestKey[1])) {
             best = sheets;
             bestKey = key;
@@ -163,14 +185,20 @@ export function optimize2D(parts: Part2D[], opts: Opts2D): Result2D {
     }
   }
 
-  const sheets: Sheet[] = best.map((s) => ({
-    placed: s.placed.map((p) => ({ ...p, x: p.x + trim, y: p.y + trim })),
-    offcuts: s.free
-      .map((f) => ({ x: f.x + trim, y: f.y + trim, length: f.w - kerf, width: f.h - kerf }))
-      .filter((r) => r.length > EPS && r.width > EPS)
-      .sort((a, b) => b.length * b.width - a.length * a.width),
-  }));
+  const sheets: Sheet[] = best.map((s) => {
+    const off = s.rem ? 0 : trim;
+    return {
+      length: s.rem ? s.rem.w - kerf : opts.stockLength,
+      width: s.rem ? s.rem.h - kerf : opts.stockWidth,
+      remnant: s.rem !== null,
+      placed: s.placed.map((p) => ({ ...p, x: p.x + off, y: p.y + off })),
+      offcuts: s.free
+        .map((f) => ({ x: f.x + off, y: f.y + off, length: f.w - kerf, width: f.h - kerf }))
+        .filter((r) => r.length > EPS && r.width > EPS)
+        .sort((a, b) => b.length * b.width - a.length * a.width),
+    };
+  });
   const partsArea = items.reduce((s, it) => s + it.l * it.w, 0);
-  const total = sheets.length * opts.stockLength * opts.stockWidth;
+  const total = sheets.reduce((sum, s) => sum + s.length * s.width, 0);
   return { sheets, unplaced, wastePct: total > 0 ? (1 - partsArea / total) * 100 : 0 };
 }
