@@ -49,12 +49,19 @@ export default async (req: Request) => {
   const row = (name: string, counts: Record<string, number> = {}) => `<tr><td>${name}</td>${events.map((e) => `<td>${counts[e] ?? 0}</td>`).join("")}</tr>`;
   const total: Record<string, number> = {};
   for (const counts of Object.values(byDay)) for (const [e, n] of Object.entries(counts)) total[e] = (total[e] ?? 0) + n;
+  const MARKETS: [string, string][] = [["de", "Germania (/de/)"], ["it", "Italia (/it/)"], ["en-us", "Stati Uniti (/en-us/)"], ["fr", "Francia (/fr/)"]];
+  const byMarket: Record<string, Record<string, number>> = {};
+  for (const [p, counts] of Object.entries(byPage)) {
+    const m = p.replace(/_/g, "/").split("/")[1] ?? "";
+    for (const [e, n] of Object.entries(counts)) (byMarket[m] ??= {})[e] = (byMarket[m][e] ?? 0) + n;
+  }
   const pages = Object.entries(byPage).sort((a, b) => (b[1].view ?? 0) - (a[1].view ?? 0));
 
   return page("CutPilot – statistiche", `<h1>CutPilot – ultimi ${DAYS} giorni</h1>
 <p>Conta pagine viste e azioni, non persone: senza cookie non si distinguono i visitatori.</p>
+<h2>Per mercato</h2><div><table>${head}${MARKETS.map(([m, name]) => row(name, byMarket[m])).join("")}</table></div>
 <h2>Totale e per giorno</h2><div><table>${head}${row("Totale", total)}${days.map((d) => row(d, byDay[d])).join("")}</table></div>
-<h2>Per pagina</h2><div><table>${head}${pages.map(([p, c]) => row(p.replace(/_/g, "/"), c)).join("")}</table></div>`);
+<h2>Per pagina</h2><p>Compaiono solo le pagine che hanno avuto almeno una visita.</p><div><table>${head}${pages.map(([p, c]) => row(p.replace(/_/g, "/"), c)).join("")}</table></div>`);
 };
 
 export const config: Config = { path: ["/admin", "/api/stats"] };
