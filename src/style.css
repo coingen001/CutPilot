@@ -116,3 +116,54 @@ footer.site nav a { color: #fff; padding-left: 0; padding-right: 16px; }
 .text p { margin: 0 0 10px; color: #33423b; max-width: 68ch; }
 .text a { color: var(--green); }
 footer.site nav.legal a { text-decoration: underline; text-underline-offset: 3px; }
+
+/* Pagine per materiale: apertura senza figura */
+.hero.plain { display: block; padding-bottom: 24px; }
+.hero.plain h1 { font-size: clamp(1.9rem, 5vw, 2.8rem); max-width: 22ch; }
+.hero.plain .lead { margin-bottom: 0; }
+.hero.plain + .tool { border-top: 0; padding-top: 8px; }
+
+/* Altri strumenti */
+.more { max-width: 1120px; margin: 0 auto; padding-top: 0; padding-bottom: 56px; }
+.more h2 { font-size: 1.15rem; }
+.more ul { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.more a { display: block; padding: 8px 14px; border: 1px solid var(--line); border-radius: 999px; color: var(--green-deep); text-decoration: none; font-weight: 500; }
+.more a:hover { border-color: var(--green); background: var(--surface); }
+
+/* Progetti salvati */
+.projects { margin-top: 34px; padding-top: 6px; border-top: 1px solid var(--line); }
+.project-save { display: flex; gap: 8px; }
+.project-save input { flex: 1; min-width: 0; }
+.project-save button { white-space: nowrap; }
+.project-list { list-style: none; padding: 0; margin: 12px 0 0; }
+.project-list li { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--surface); }
+.upgrade { margin-top: 12px; padding: 14px 16px; background: #fdf1dc; border-left: 4px solid var(--amber); border-radius: 4px; }
+.upgrade p { margin: 0 0 10px; }
+
+/* Prezzi */
+.text.wide { max-width: 1120px; }
+.plans { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-top: 8px; align-items: start; }
+.plan-card { border: 1px solid var(--line); border-radius: 14px; padding: 22px; background: #fff; display: grid; gap: 12px; }
+.plan-card.featured { border: 2px solid var(--green); }
+.plan-card h2 { margin: 0; font-size: 1.25rem; }
+.plan-card h2 small { font-family: 'Figtree Variable', sans-serif; font-size: 0.78rem; font-weight: 600; color: #8a5a10; background: #fdf1dc; padding: 3px 8px; border-radius: 999px; vertical-align: middle; margin-left: 6px; }
+.plan-card .price { font-family: var(--display); font-size: 2.2rem; font-weight: 650; color: var(--green-deep); margin: 0; max-width: none; }
+.plan-card .price span { font-family: 'Figtree Variable', sans-serif; font-size: 0.9rem; font-weight: 400; color: var(--muted); }
+.plan-card ul { margin: 0; padding-left: 18px; color: #33423b; display: grid; gap: 4px; }
+.plan-card .btn { text-align: center; }
+.waitlist { margin-top: 28px; max-width: 460px; padding: 20px; background: var(--surface); border-radius: 14px; display: grid; gap: 12px; }
+.waitlist h2 { margin: 0; }
+.waitlist input[type='email'] { width: 100%; padding: 11px; border: 1px solid var(--line); border-radius: 8px; font: inherit; }
+.waitlist .msg:empty { display: none; }
+@media print { .projects, .more { display: none !important; } }
+
+/* Finestra di importazione */
+.button.primary { background: var(--green); border-color: var(--green); color: #fff; }
+.import-dialog { border: 0; border-radius: 16px; padding: 24px; width: min(560px, calc(100vw - 24px)); color: var(--ink); box-shadow: 0 20px 60px rgba(9, 84, 65, 0.28); }
+.import-dialog::backdrop { background: rgba(9, 40, 31, 0.5); }
+.import-dialog h2 { margin: 0 0 8px; font-size: 1.35rem; }
+.import-dialog p { margin: 0 0 14px; color: var(--muted); }
+.import-dialog ul { margin: 14px 0 4px; padding-left: 18px; color: #33423b; font-size: 0.93rem; display: grid; gap: 4px; }
+table.sample { width: 100%; border-collapse: collapse; font-size: 0.9rem; font-variant-numeric: tabular-nums; }
+table.sample th, table.sample td { border: 1px solid var(--line); padding: 6px 8px; text-align: left; }
+table.sample th { background: var(--surface); font-weight: 600; }

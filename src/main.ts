@@ -5,6 +5,7 @@ import { optimize1D, type Result1D } from './engine/cut1d';
 import { optimize2D, type Result2D } from './engine/cut2d';
 import { dict, type Lang } from './i18n';
 import { readRows, rowsToParts } from './import';
+import { formatInch, parseDim } from './units';
 
 const htmlLang = document.documentElement.lang.toLowerCase();
 const lang: Lang = htmlLang in dict ? (htmlLang as Lang) : 'en-us';
@@ -12,7 +13,10 @@ const t = dict[lang];
 const app = document.getElementById('app')!;
 const inch = t.unit === 'in';
 // Le distinte in pollici e in millimetri si salvano separate.
-const STORE = `cutpilot-v1-${t.unit}`;
+const preset = JSON.parse(app.dataset.preset || '{}') as { key?: string; mode?: '2d' | '1d'; sheet?: object; bar?: object };
+const STORE = `cutpilot-v1-${t.unit}-${preset.key ?? 'home'}`;
+const PROJECTS = `cutpilot-projects-${t.unit}`;
+const FREE_PROJECTS = 1;
 
 interface Row2D { label: string; length: number; width: number; qty: number; rot: boolean }
 interface Row1D { label: string; length: number; qty: number }
@@ -28,12 +32,15 @@ const blank2d = (): Row2D => ({ label: '', length: 0, width: 0, qty: 1, rot: tru
 const blank1d = (): Row1D => ({ label: '', length: 0, qty: 1 });
 
 let state: State = {
-  mode: '2d',
+  mode: preset.mode ?? '2d',
   sheet: inch ? { stockLength: 96, stockWidth: 48, kerf: 0.125, trim: 0, grain: false } : { stockLength: 2800, stockWidth: 2070, kerf: 3.2, trim: 10, grain: false },
   bar: inch ? { stockLength: 96, kerf: 0.125, trim: 0 } : { stockLength: 6000, kerf: 3, trim: 0 },
   parts2d: [blank2d()],
   parts1d: [blank1d()],
 };
+state.sheet = { ...state.sheet, ...preset.sheet };
+state.bar = { ...state.bar, ...preset.bar };
+const defaults = { ...state.sheet };
 try {
   const saved = localStorage.getItem(STORE);
   if (saved) state = { ...state, ...JSON.parse(saved) };
@@ -43,11 +50,17 @@ let message = '';
 let result: { kind: '2d'; data: Result2D } | { kind: '1d'; data: Result1D } | null = null;
 
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
-const fmt = (n: number) => (inch ? String(+n.toFixed(3)) : String(+n.toFixed(1)).replace('.', ','));
+const decimal = (n: number) => (lang === 'en-us' ? String(+n.toFixed(1)) : String(+n.toFixed(1)).replace('.', ','));
+// Misure: frazioni di pollice negli Stati Uniti, millimetri altrove.
+const fmt = (n: number) => (inch ? formatInch(n) : decimal(n));
 const TINTS = ['#cfe3d8', '#f6dfb4', '#dde6ea', '#a9cdbb', '#fbeed3', '#e7eae3', '#8fbfa8', '#eccf94'];
 const tint = (n: number) => TINTS[(n - 1) % TINTS.length];
-const num = (key: string, value: number, labelText: string) =>
-  `<label>${labelText}<input type="number" inputmode="decimal" min="0" step="any" data-set="${key}" value="${value || ''}"></label>`;
+// Nelle impostazioni lo zero si mostra (lama 0 per il vetro); nella distinta una misura vuota resta vuota.
+const dimAttrs = (value: number, showZero = false) => {
+  const shown = value || showZero ? (inch ? fmt(value) : String(value)) : '';
+  return inch ? `type="text" data-dim autocomplete="off" value="${shown}"` : `type="number" inputmode="decimal" min="0" step="any" value="${shown}"`;
+};
+const num = (key: string, value: number, labelText: string) => `<label>${labelText}<input ${dimAttrs(value, true)} data-set="${key}"></label>`;
 
 function save() {
   try { localStorage.setItem(STORE, JSON.stringify(state)); } catch { /* nessun salvataggio */ }
@@ -57,10 +70,16 @@ function partsTable(): string {
   const is2d = state.mode === '2d';
   const rows = (is2d ? state.parts2d : state.parts1d)
     .map((r, i) => {
-      const cell = (field: string, value: number | string, type = 'number') =>
-        `<td><input ${type === 'number' ? 'type="number" inputmode="decimal" min="0" step="any"' : 'type="text"'} data-row="${i}" data-field="${field}" value="${type === 'number' ? value || '' : esc(String(value))}" aria-label="${field}"></td>`;
+      const cell = (field: string, value: number | string, kind: 'dim' | 'qty' | 'text' = 'dim') =>
+        `<td><input ${
+          kind === 'dim'
+            ? dimAttrs(value as number)
+            : kind === 'qty'
+              ? `type="number" inputmode="numeric" min="0" step="1" value="${value || ''}"`
+              : `type="text" value="${esc(String(value))}"`
+        } data-row="${i}" data-field="${field}" aria-label="${field}"></td>`;
       const r2 = r as Row2D;
-      return `<tr>${cell('label', r.label, 'text')}${cell('length', r.length)}${is2d ? cell('width', r2.width) : ''}${cell('qty', r.qty)}${
+      return `<tr>${cell('label', r.label, 'text')}${cell('length', r.length)}${is2d ? cell('width', r2.width) : ''}${cell('qty', r.qty, 'qty')}${
         is2d && state.sheet.grain
           ? `<td class="center"><input type="checkbox" data-row="${i}" data-field="rot" ${r2.rot ? 'checked' : ''} aria-label="${t.rotate}"></td>`
           : ''
@@ -136,7 +155,7 @@ function results(): string {
     const { stockLength: L, stockWidth: W } = state.sheet;
     const idOf = numbering(sheets.flatMap((s) => s.placed));
     const best = sheets.flatMap((s) => s.offcuts.slice(0, 1)).sort((a, b) => b.length * b.width - a.length * a.width)[0];
-    return `${unplaced}<div class="stats">${stat(t.sheets, String(sheets.length))}${stat(t.waste, fmt(wastePct) + ' %')}${stat(
+    return `${unplaced}<div class="stats">${stat(t.sheets, String(sheets.length))}${stat(t.waste, decimal(wastePct) + ' %')}${stat(
       t.placed,
       String(sheets.reduce((s, sh) => s + sh.placed.length, 0)),
     )}${best ? stat(t.bestOffcut, `${fmt(best.length)} × ${fmt(best.width)}`) : ''}</div>${sheets
@@ -148,7 +167,7 @@ function results(): string {
   const L = state.bar.stockLength;
   const h = L / 26;
   const idOf = numbering(bars.flatMap((b) => b.cuts));
-  return `${unplaced}<div class="stats">${stat(t.bars, String(bars.length))}${stat(t.waste, fmt(wastePct) + ' %')}${stat(
+  return `${unplaced}<div class="stats">${stat(t.bars, String(bars.length))}${stat(t.waste, decimal(wastePct) + ' %')}${stat(
     t.placed,
     String(bars.reduce((s, b) => s + b.cuts.length, 0)),
   )}</div>${bars
@@ -164,6 +183,42 @@ function results(): string {
           .join('')}</svg>${legend(b.cuts, idOf)}</article>`,
     )
     .join('')}`;
+}
+
+interface Project { name: string; state: State }
+function loadProjects(): Project[] {
+  try { return JSON.parse(localStorage.getItem(PROJECTS) || '[]'); } catch { return []; }
+}
+let projectMsg = '';
+let overLimit = false;
+
+function projectsBlock(): string {
+  const list = loadProjects();
+  return `<section class="projects">
+      <h2>${t.projects}</h2>
+      <div class="project-save"><input type="text" data-project placeholder="${t.projectName}" aria-label="${t.projectName}" maxlength="60"><button data-act="save-project">${t.saveProject}</button></div>
+      ${projectMsg ? `<p class="msg">${projectMsg}</p>` : ''}
+      ${overLimit ? `<div class="upgrade"><p>${t.limit}</p><a class="btn primary" href="${app.dataset.pricing ?? '#'}">${t.seePlans}</a></div>` : ''}
+      ${list.length ? `<ul class="project-list">${list.map((pr, i) => `<li><span>${esc(pr.name)}</span><button data-load="${i}">${t.load}</button><button class="icon" data-drop="${i}" aria-label="${t.del}">×</button></li>`).join('')}</ul>` : ''}
+    </section>`;
+}
+
+function saveProject() {
+  const name = (app.querySelector('[data-project]') as HTMLInputElement).value.trim();
+  projectMsg = '';
+  overLimit = false;
+  if (!name) projectMsg = t.noName;
+  else {
+    const list = loadProjects();
+    const at = list.findIndex((pr) => pr.name === name);
+    if (at < 0 && list.length >= FREE_PROJECTS) overLimit = true;
+    else {
+      const entry = { name, state: JSON.parse(JSON.stringify(state)) };
+      if (at < 0) list.push(entry);
+      else list[at] = entry;
+      try { localStorage.setItem(PROJECTS, JSON.stringify(list)); projectMsg = t.saved; } catch { projectMsg = t.importFail; }
+    }
+  }
 }
 
 function render() {
@@ -191,7 +246,7 @@ function render() {
       ${partsTable()}
       <div class="actions">
         <button data-act="add">${t.addRow}</button>
-        <label class="button">${t.importFile}<input type="file" accept=".csv,.txt,.xlsx" data-act="import" hidden></label>
+        <button data-act="import-open">${t.importFile}</button>
         <button data-act="example">${t.example}</button>
         <button data-act="clear">${t.clear}</button>
       </div>
@@ -199,6 +254,7 @@ function render() {
       ${message ? `<p class="msg">${message}</p>` : ''}
     </section>
     <button class="primary" data-act="run">${t.run}</button>
+    ${projectsBlock()}
   </div>
   <section id="results">${results()}${result ? `<button class="no-print" data-act="print">${t.print}</button>` : ''}</section>`;
 }
@@ -231,8 +287,8 @@ const example1d: Row1D[] = dims1d.map(([length, qty], i) => ({ label: t.ex[5 + i
 // Un input modificato aggiorna lo stato senza ridisegnare, per non perdere il cursore.
 app.addEventListener('input', (e) => {
   const el = e.target as HTMLInputElement;
-  if (el.type === 'file') return;
-  const value = el.type === 'checkbox' ? el.checked : el.type === 'number' ? Number(el.value) || 0 : el.value;
+  if (el.dataset.project !== undefined) return;
+  const value = el.type === 'checkbox' ? el.checked : el.dataset.dim !== undefined ? parseDim(el.value) || 0 : el.type === 'number' ? Number(el.value) || 0 : el.value;
   if (el.dataset.set) {
     const [group, key] = el.dataset.set.split('.') as ['sheet' | 'bar', string];
     (state[group] as Record<string, unknown>)[key] = value;
@@ -244,12 +300,10 @@ app.addEventListener('input', (e) => {
   save();
 });
 
-app.addEventListener('change', async (e) => {
-  const el = e.target as HTMLInputElement;
-  if (el.dataset.act !== 'import' || !el.files?.[0]) return;
+async function importFile(file: File) {
   try {
     const is2d = state.mode === '2d';
-    const rows = rowsToParts(await readRows(el.files[0]), is2d ? 3 : 2);
+    const rows = rowsToParts(await readRows(file), is2d ? 3 : 2);
     if (is2d) state.parts2d = rows.map((r) => ({ label: r.label, length: r.nums[0], width: r.nums[1], qty: r.nums[2], rot: true }));
     else state.parts1d = rows.map((r) => ({ label: r.label, length: r.nums[0], qty: r.nums[1] }));
     message = t.importDone(rows.length);
@@ -259,6 +313,42 @@ app.addEventListener('change', async (e) => {
   result = null;
   save();
   render();
+}
+
+// Finestra di importazione: spiega la struttura del file e offre un modello da scaricare.
+const importDialog = document.createElement('dialog');
+importDialog.className = 'import-dialog';
+document.body.append(importDialog);
+
+function openImport() {
+  const is2d = state.mode === '2d';
+  const head = is2d ? [t.label, t.length, t.width, t.qty] : [t.label, t.length, t.qty];
+  const sample = is2d ? example2d.map((r) => [r.label, fmt(r.length), fmt(r.width), r.qty]) : example1d.map((r) => [r.label, fmt(r.length), r.qty]);
+  const sep = inch ? ',' : ';';
+  const quote = (v: string | number) => (String(v).includes(sep) ? `"${v}"` : String(v));
+  const csv = '\ufeff' + [head, ...sample].map((row) => row.map(quote).join(sep)).join('\r\n') + '\r\n';
+  importDialog.innerHTML = `<h2>${t.importTitle}</h2>
+    <p>${t.importIntro} ${t.unitNote}</p>
+    <table class="sample"><thead><tr>${head.map((h) => `<th>${h}</th>`).join('')}</tr></thead><tbody>${sample
+      .slice(0, 3)
+      .map((row) => `<tr>${row.map((c) => `<td>${esc(String(c))}</td>`).join('')}</tr>`)
+      .join('')}</tbody></table>
+    <ul>${t.importRules.map((r) => `<li>${r}</li>`).join('')}</ul>
+    <div class="actions">
+      <label class="button primary">${t.chooseFile}<input type="file" accept=".csv,.txt,.xlsx" hidden></label>
+      <a class="btn" download="cutpilot-${is2d ? '2d' : '1d'}.csv" href="${URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }))}">${t.template}</a>
+      <button data-close>${t.close}</button>
+    </div>`;
+  importDialog.showModal();
+}
+importDialog.addEventListener('click', (e) => {
+  if (e.target === importDialog || (e.target as HTMLElement).closest('[data-close]')) importDialog.close();
+});
+importDialog.addEventListener('change', (e) => {
+  const file = (e.target as HTMLInputElement).files?.[0];
+  if (!file) return;
+  importDialog.close();
+  void importFile(file);
 });
 
 app.addEventListener('click', (e) => {
@@ -282,6 +372,21 @@ app.addEventListener('click', (e) => {
     if (is2d) state.parts2d = [blank2d()];
     else state.parts1d = [blank1d()];
     result = null;
+  } else if (el.dataset.act === 'import-open') {
+    return openImport();
+  } else if (el.dataset.act === 'save-project') {
+    saveProject();
+  } else if (el.dataset.load) {
+    state = loadProjects()[Number(el.dataset.load)].state;
+    result = null;
+    projectMsg = '';
+    overLimit = false;
+  } else if (el.dataset.drop) {
+    const list = loadProjects();
+    list.splice(Number(el.dataset.drop), 1);
+    try { localStorage.setItem(PROJECTS, JSON.stringify(list)); } catch { /* nessun salvataggio */ }
+    overLimit = false;
+    projectMsg = '';
   } else if (el.dataset.act === 'run') {
     save();
     return run();
@@ -297,7 +402,6 @@ render();
 // Figura d'apertura: uno schema vero, calcolato dal motore sull'esempio dell'armadio.
 const hero = document.getElementById('hero-figure');
 if (hero) {
-  const defaults = inch ? { stockLength: 96, stockWidth: 48, kerf: 0.125, trim: 0 } : { stockLength: 2800, stockWidth: 2070, kerf: 3.2, trim: 10 };
   const demo = optimize2D(example2d.map((r) => ({ label: r.label, length: r.length, width: r.width, qty: r.qty })), defaults);
   hero.innerHTML = sheetSvg(demo.sheets[0], defaults.stockLength, defaults.stockWidth, numbering(demo.sheets.flatMap((sh) => sh.placed)), 2);
 }

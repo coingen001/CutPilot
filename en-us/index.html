@@ -31,17 +31,21 @@
       </section>
       <section id="tool" class="tool">
         <h2>Your cut</h2>
-        <div id="app"></div>
+        <div id="app" data-preset='{}' data-pricing="./pricing.html"></div>
       </section>
       <section class="explain">
         <h2>What the cutting plan accounts for</h2>
         <dl><div><dt>Blade kerf</dt><dd>Every cut uses up material. The kerf of the blade always stays free between two parts.</dd></div><div><dt>Edge trim</dt><dd>Damaged panel edges are removed first, so every part comes from clean material.</dd></div><div><dt>Grain direction</dt><dd>On decorative panels you decide part by part whether it may be rotated.</dd></div><div><dt>Through cuts</dt><dd>Every cut runs edge to edge, as panel saws and sliding table saws require.</dd></div></dl>
       </section>
+      <section class="more">
+        <h2>A calculator for every material</h2>
+        <ul><li><a href="./waste-calculator.html">Waste calculator</a></li><li><a href="./mdf-cut-optimizer.html">MDF cut optimizer</a></li><li><a href="./plywood-cut-optimizer.html">Plywood cut optimizer</a></li><li><a href="./aluminum-extrusion-cut-optimizer.html">Aluminum extrusions</a></li><li><a href="./tube-cut-optimizer.html">Tube and steel stock</a></li><li><a href="./glass-cut-optimizer.html">Glass cut optimizer</a></li></ul>
+      </section>
     </main>
     <footer class="site">
       <img src="../src/assets/logo-white.png" alt="CutPilot" width="150" height="42" />
       <p>Preview version. Your cut list is processed only in your browser and is never sent anywhere.</p>
-      <nav class="legal"><a href="./legal-notice.html">Legal notice</a><a href="./privacy.html">Privacy</a></nav>
+      <nav class="legal"><a href="./pricing.html">Pricing</a><a href="./legal-notice.html">Legal notice</a><a href="./privacy.html">Privacy</a></nav>
     </footer>
     <script type="module" src="../src/main.ts"></script>
   </body>

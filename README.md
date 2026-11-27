@@ -46,3 +46,14 @@ Parametri da usare uguali nei programmi concorrenti:
 
 Il limite teorico è un minimo calcolato su area o lunghezza: nessun programma può scendere sotto,
 ma spesso non è raggiungibile. Il confronto che conta è con i concorrenti.
+
+## Pagine
+
+Le pagine HTML in `de/`, `it/`, `en-us/` e `fr/` sono generate da `scripts/pages.py`
+(home, strumenti per materiale, prezzi, note legali, privacy). Per cambiare un testo
+si modifica lo script e si riesegue `python3 scripts/pages.py`.
+
+- Strumenti per materiale: stessa applicazione con valori iniziali propri (formato, lama, rifilo, venatura).
+- Prezzi: i piani PRO e Business raccolgono l'email in lista d'attesa con Netlify Forms (modulo `waitlist`).
+- Piano gratuito: un progetto salvato nel browser; dal secondo compare l'invito a PRO.
+- Stati Uniti: misure in pollici, scritte e lette come frazioni (`src/units.ts`).

@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Verschnitt berechnen, bevor Sie Material bestellen | CutPilot</title>
+    <meta name="description" content="Zuschnittliste eingeben und sofort sehen, wie viele Platten Sie brauchen und wie viel Prozent davon Verschnitt sind." />
+    <meta name="theme-color" content="#095441" />
+    <link rel="icon" type="image/png" href="../src/assets/icon.png" />
+  </head>
+  <body>
+    <header class="site">
+      <a class="brand" href="./"><img src="../src/assets/logo.png" alt="CutPilot" width="180" height="50" /></a>
+      <nav aria-label="Sprache"><a href="../de/" aria-current="page">DE</a><a href="../it/">IT</a><a href="../en-us/">EN</a><a href="../fr/">FR</a></nav>
+    </header>
+    <main>
+      <section class="hero plain">
+        <h1>Verschnitt berechnen, bevor Sie Material bestellen</h1>
+        <p class="lead">Zuschnittliste eingeben und sofort sehen, wie viele Platten Sie brauchen und wie viel Prozent davon Verschnitt sind.</p>
+      </section>
+      <section id="tool" class="tool">
+        <div id="app" data-preset='{"key":"waste"}' data-pricing="./preise.html"></div>
+      </section>
+      <section class="explain">
+        <dl><div><dt>Wie der Verschnitt berechnet wird</dt><dd>Verschnitt ist die Plattenfläche abzüglich der Fläche aller Teile. Sägeschnitte und Besäumschnitt zählen dazu, weil dieses Material verloren ist.</dd></div></dl>
+      </section>
+      <section class="more">
+        <h2>Rechner für jedes Material</h2>
+        <ul><li><a href="./">Platten und Stangen</a></li><li><a href="./mdf-zuschnitt.html">MDF-Zuschnitt</a></li><li><a href="./sperrholz-zuschnitt.html">Sperrholz-Zuschnitt</a></li><li><a href="./aluprofile-zuschnitt.html">Aluprofile</a></li><li><a href="./rohre-zuschnitt.html">Rohre und Stahlprofile</a></li><li><a href="./glas-zuschnitt.html">Glaszuschnitt</a></li></ul>
+      </section>
+    </main>
+    <footer class="site">
+      <img src="../src/assets/logo-white.png" alt="CutPilot" width="150" height="42" />
+      <p>Vorschauversion. Ihre Zuschnittliste wird nur in Ihrem Browser verarbeitet und nicht übertragen.</p>
+      <nav class="legal"><a href="./preise.html">Preise</a><a href="./impressum.html">Impressum</a><a href="./datenschutz.html">Datenschutz</a></nav>
+    </footer>
+    <script type="module" src="../src/main.ts"></script>
+  </body>
+</html>

@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tarifs | CutPilot</title>
+    <meta name="description" content="Le calcul reste gratuit. PRO et Business sont en préparation : laissez votre e-mail et nous vous préviendrons dès qu’ils seront disponibles." />
+    <meta name="theme-color" content="#095441" />
+    <link rel="icon" type="image/png" href="../src/assets/icon.png" />
+  </head>
+  <body>
+    <header class="site">
+      <a class="brand" href="./"><img src="../src/assets/logo.png" alt="CutPilot" width="180" height="50" /></a>
+      <nav aria-label="Langue"><a href="../de/">DE</a><a href="../it/">IT</a><a href="../en-us/">EN</a><a href="../fr/" aria-current="page">FR</a></nav>
+    </header>
+    <main>
+      <section class="text wide">
+        <h1>Tarifs</h1>
+        <p class="lead">Le calcul reste gratuit. PRO et Business sont en préparation : laissez votre e-mail et nous vous préviendrons dès qu’ils seront disponibles.</p>
+        <div class="plans">
+          <article class="plan-card"><h2>Free</h2><p class="price">0 €</p><ul><li>Calculs illimités, panneaux et barres</li><li>Import depuis Excel et CSV</li><li>Impression du plan de coupe</li><li>1 projet enregistré</li></ul><a class="btn" href="./">Commencer gratuitement</a></article>
+          <article class="plan-card featured"><h2>PRO <small>bientôt</small></h2><p class="price">19 € <span>par mois</span></p><ul><li>Tout le plan Free</li><li>Projets illimités</li><li>Coût matière par commande</li><li>Gestion et réemploi des chutes</li></ul><button class="btn primary" data-plan="PRO">Rejoindre la liste d’attente</button></article>
+          <article class="plan-card"><h2>Business <small>bientôt</small></h2><p class="price">39 € <span>par mois</span></p><ul><li>Tout le plan PRO</li><li>Plusieurs collaborateurs</li><li>Stock de panneaux et de barres</li><li>Exports avancés et API</li></ul><button class="btn" data-plan="Business">Rejoindre la liste d’attente</button></article>
+        </div>
+        <form name="waitlist" method="POST" data-netlify="true" netlify-honeypot="bot-field" class="waitlist" hidden data-ok="Merci. Nous vous écrirons dès que l’offre sera disponible." data-err="Cela n’a pas fonctionné. Réessayez plus tard.">
+          <input type="hidden" name="form-name" value="waitlist" />
+          <input type="hidden" name="plan" value="PRO" />
+          <input type="hidden" name="lang" value="fr" />
+          <p hidden><label>Leave empty <input name="bot-field" /></label></p>
+          <h2>Liste d’attente: <span data-plan-label>PRO</span></h2>
+          <label>Adresse e-mail<input type="email" name="email" required autocomplete="email" /></label>
+          <button class="btn primary" type="submit">M’inscrire</button>
+          <p class="hint">Nous utilisons votre adresse uniquement pour vous informer sur cette offre. <a href="./confidentialite.html">Confidentialité</a></p>
+          <p class="msg" role="status"></p>
+        </form>
+      </section>
+    </main>
+    <footer class="site">
+      <img src="../src/assets/logo-white.png" alt="CutPilot" width="150" height="42" />
+      <p>Version d’aperçu. Votre liste de débit est traitée uniquement dans votre navigateur et n’est jamais transmise.</p>
+      <nav class="legal"><a href="./tarifs.html">Tarifs</a><a href="./mentions-legales.html">Mentions légales</a><a href="./confidentialite.html">Confidentialité</a></nav>
+    </footer>
+    <script type="module" src="../src/page.ts"></script>
+  </body>
+</html>

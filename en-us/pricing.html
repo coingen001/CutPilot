@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Pricing | CutPilot</title>
+    <meta name="description" content="Calculating stays free. PRO and Business are in the works: leave your email and we will let you know when they are available." />
+    <meta name="theme-color" content="#095441" />
+    <link rel="icon" type="image/png" href="../src/assets/icon.png" />
+  </head>
+  <body>
+    <header class="site">
+      <a class="brand" href="./"><img src="../src/assets/logo.png" alt="CutPilot" width="180" height="50" /></a>
+      <nav aria-label="Language"><a href="../de/">DE</a><a href="../it/">IT</a><a href="../en-us/" aria-current="page">EN</a><a href="../fr/">FR</a></nav>
+    </header>
+    <main>
+      <section class="text wide">
+        <h1>Pricing</h1>
+        <p class="lead">Calculating stays free. PRO and Business are in the works: leave your email and we will let you know when they are available.</p>
+        <div class="plans">
+          <article class="plan-card"><h2>Free</h2><p class="price">$0</p><ul><li>Unlimited calculations, sheets and bars</li><li>Import from Excel and CSV</li><li>Print the cutting plan</li><li>1 saved project</li></ul><a class="btn" href="./">Start for free</a></article>
+          <article class="plan-card featured"><h2>PRO <small>coming soon</small></h2><p class="price">$19 <span>per month</span></p><ul><li>Everything in Free</li><li>Unlimited projects</li><li>Material cost per job</li><li>Track and reuse offcuts</li></ul><button class="btn primary" data-plan="PRO">Join the waitlist</button></article>
+          <article class="plan-card"><h2>Business <small>coming soon</small></h2><p class="price">$39 <span>per month</span></p><ul><li>Everything in PRO</li><li>Multiple team members</li><li>Sheet and bar inventory</li><li>Advanced exports and API</li></ul><button class="btn" data-plan="Business">Join the waitlist</button></article>
+        </div>
+        <form name="waitlist" method="POST" data-netlify="true" netlify-honeypot="bot-field" class="waitlist" hidden data-ok="Thanks. We will email you as soon as the plan is available." data-err="That did not work. Please try again later.">
+          <input type="hidden" name="form-name" value="waitlist" />
+          <input type="hidden" name="plan" value="PRO" />
+          <input type="hidden" name="lang" value="en-us" />
+          <p hidden><label>Leave empty <input name="bot-field" /></label></p>
+          <h2>Waitlist: <span data-plan-label>PRO</span></h2>
+          <label>Email address<input type="email" name="email" required autocomplete="email" /></label>
+          <button class="btn primary" type="submit">Sign me up</button>
+          <p class="hint">We use your address only to tell you about this plan. <a href="./privacy.html">Privacy</a></p>
+          <p class="msg" role="status"></p>
+        </form>
+      </section>
+    </main>
+    <footer class="site">
+      <img src="../src/assets/logo-white.png" alt="CutPilot" width="150" height="42" />
+      <p>Preview version. Your cut list is processed only in your browser and is never sent anywhere.</p>
+      <nav class="legal"><a href="./pricing.html">Pricing</a><a href="./legal-notice.html">Legal notice</a><a href="./privacy.html">Privacy</a></nav>
+    </footer>
+    <script type="module" src="../src/page.ts"></script>
+  </body>
+</html>

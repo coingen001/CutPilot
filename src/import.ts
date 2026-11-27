@@ -1,4 +1,5 @@
 // Lettura della distinta da CSV o Excel. Restituisce righe di celle grezze.
+import { parseDim } from './units';
 
 export async function readRows(file: File): Promise<unknown[][]> {
   if (/\.xlsx$/i.test(file.name)) {
@@ -11,11 +12,7 @@ export async function readRows(file: File): Promise<unknown[][]> {
   return lines.map((l) => l.split(delimiter).map((c) => c.trim().replace(/^"|"$/g, '')));
 }
 
-export function toNumber(value: unknown): number {
-  if (typeof value === 'number') return value;
-  const n = Number(String(value ?? '').replace(/\s/g, '').replace(',', '.'));
-  return Number.isFinite(n) ? n : NaN;
-}
+export const toNumber = parseDim;
 
 // Accetta righe con o senza colonna descrizione; salta intestazioni e righe non numeriche.
 export function rowsToParts(rows: unknown[][], numbersNeeded: number) {

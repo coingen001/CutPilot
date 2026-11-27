@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Work out your waste before you order material | CutPilot</title>
+    <meta name="description" content="Enter your cut list and see right away how many sheets you need and what share of them ends up as waste." />
+    <meta name="theme-color" content="#095441" />
+    <link rel="icon" type="image/png" href="../src/assets/icon.png" />
+  </head>
+  <body>
+    <header class="site">
+      <a class="brand" href="./"><img src="../src/assets/logo.png" alt="CutPilot" width="180" height="50" /></a>
+      <nav aria-label="Language"><a href="../de/">DE</a><a href="../it/">IT</a><a href="../en-us/" aria-current="page">EN</a><a href="../fr/">FR</a></nav>
+    </header>
+    <main>
+      <section class="hero plain">
+        <h1>Work out your waste before you order material</h1>
+        <p class="lead">Enter your cut list and see right away how many sheets you need and what share of them ends up as waste.</p>
+      </section>
+      <section id="tool" class="tool">
+        <div id="app" data-preset='{"key":"waste"}' data-pricing="./pricing.html"></div>
+      </section>
+      <section class="explain">
+        <dl><div><dt>How waste is calculated</dt><dd>Waste is the sheet area minus the area of all parts. Saw kerfs and edge trim count as waste, because that material is gone.</dd></div></dl>
+      </section>
+      <section class="more">
+        <h2>A calculator for every material</h2>
+        <ul><li><a href="./">Sheets and lumber</a></li><li><a href="./mdf-cut-optimizer.html">MDF cut optimizer</a></li><li><a href="./plywood-cut-optimizer.html">Plywood cut optimizer</a></li><li><a href="./aluminum-extrusion-cut-optimizer.html">Aluminum extrusions</a></li><li><a href="./tube-cut-optimizer.html">Tube and steel stock</a></li><li><a href="./glass-cut-optimizer.html">Glass cut optimizer</a></li></ul>
+      </section>
+    </main>
+    <footer class="site">
+      <img src="../src/assets/logo-white.png" alt="CutPilot" width="150" height="42" />
+      <p>Preview version. Your cut list is processed only in your browser and is never sent anywhere.</p>
+      <nav class="legal"><a href="./pricing.html">Pricing</a><a href="./legal-notice.html">Legal notice</a><a href="./privacy.html">Privacy</a></nav>
+    </footer>
+    <script type="module" src="../src/main.ts"></script>
+  </body>
+</html>
