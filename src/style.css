@@ -132,11 +132,11 @@ footer.site nav.legal a { text-decoration: underline; text-underline-offset: 3px
 
 /* Progetti salvati */
 .projects { margin-top: 34px; padding-top: 6px; border-top: 1px solid var(--line); }
-.project-save { display: flex; gap: 8px; }
-.project-save input { flex: 1; min-width: 0; }
-.project-save button { white-space: nowrap; }
-.project-list { list-style: none; padding: 0; margin: 12px 0 0; }
-.project-list li { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--surface); }
+
+
+
+
+
 .upgrade { margin-top: 12px; padding: 14px 16px; background: #fdf1dc; border-left: 4px solid var(--amber); border-radius: 4px; }
 .upgrade p { margin: 0 0 10px; }
 
@@ -167,3 +167,16 @@ footer.site nav.legal a { text-decoration: underline; text-underline-offset: 3px
 table.sample { width: 100%; border-collapse: collapse; font-size: 0.9rem; font-variant-numeric: tabular-nums; }
 table.sample th, table.sample td { border: 1px solid var(--line); padding: 6px 8px; text-align: left; }
 table.sample th { background: var(--surface); font-weight: 600; }
+
+/* Telefono: lo strumento subito sotto il titolo. La figura e il pulsante che porta allo strumento servono solo su schermi larghi. */
+@media (max-width: 879px) {
+  .hero { gap: 0; padding-top: 8px; padding-bottom: 22px; }
+  .hero-figure, .hero .cta .primary { display: none; }
+  h1 { font-size: clamp(1.8rem, 7.4vw, 2.4rem); margin-bottom: 10px; }
+  .hero p.lead { font-size: 1rem; margin-bottom: 14px; }
+  .hero .facts { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 0.86rem; }
+  .hero .facts li { padding-left: 16px; }
+  .hero .facts li::before { width: 8px; height: 8px; top: 0.5em; }
+  .tool { padding-top: 22px; }
+  .tool > h2 { display: none; }
+}

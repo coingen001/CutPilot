@@ -5,6 +5,7 @@ import { optimize1D, type Result1D } from './engine/cut1d';
 import { optimize2D, type Result2D } from './engine/cut2d';
 import { dict, type Lang } from './i18n';
 import { readRows, rowsToParts } from './import';
+import { track } from './track';
 import { formatInch, parseDim } from './units';
 
 const htmlLang = document.documentElement.lang.toLowerCase();
@@ -15,8 +16,6 @@ const inch = t.unit === 'in';
 // Le distinte in pollici e in millimetri si salvano separate.
 const preset = JSON.parse(app.dataset.preset || '{}') as { key?: string; mode?: '2d' | '1d'; sheet?: object; bar?: object };
 const STORE = `cutpilot-v1-${t.unit}-${preset.key ?? 'home'}`;
-const PROJECTS = `cutpilot-projects-${t.unit}`;
-const FREE_PROJECTS = 1;
 
 interface Row2D { label: string; length: number; width: number; qty: number; rot: boolean }
 interface Row1D { label: string; length: number; qty: number }
@@ -185,40 +184,14 @@ function results(): string {
     .join('')}`;
 }
 
-interface Project { name: string; state: State }
-function loadProjects(): Project[] {
-  try { return JSON.parse(localStorage.getItem(PROJECTS) || '[]'); } catch { return []; }
-}
-let projectMsg = '';
+// Salvare i progetti è una funzione PRO: il pulsante è visibile e, quando si prova, spiega il piano.
 let overLimit = false;
 
 function projectsBlock(): string {
-  const list = loadProjects();
   return `<section class="projects">
-      <h2>${t.projects}</h2>
-      <div class="project-save"><input type="text" data-project placeholder="${t.projectName}" aria-label="${t.projectName}" maxlength="60"><button data-act="save-project">${t.saveProject}</button></div>
-      ${projectMsg ? `<p class="msg">${projectMsg}</p>` : ''}
+      <button data-act="save-project">${t.saveProject}</button>
       ${overLimit ? `<div class="upgrade"><p>${t.limit}</p><a class="btn primary" href="${app.dataset.pricing ?? '#'}">${t.seePlans}</a></div>` : ''}
-      ${list.length ? `<ul class="project-list">${list.map((pr, i) => `<li><span>${esc(pr.name)}</span><button data-load="${i}">${t.load}</button><button class="icon" data-drop="${i}" aria-label="${t.del}">×</button></li>`).join('')}</ul>` : ''}
     </section>`;
-}
-
-function saveProject() {
-  const name = (app.querySelector('[data-project]') as HTMLInputElement).value.trim();
-  projectMsg = '';
-  overLimit = false;
-  if (!name) projectMsg = t.noName;
-  else {
-    const list = loadProjects();
-    const at = list.findIndex((pr) => pr.name === name);
-    if (at < 0 && list.length >= FREE_PROJECTS) overLimit = true;
-    else {
-      const entry = { name, state: JSON.parse(JSON.stringify(state)) };
-      if (at < 0) list.push(entry);
-      else list[at] = entry;
-      try { localStorage.setItem(PROJECTS, JSON.stringify(list)); projectMsg = t.saved; } catch { projectMsg = t.importFail; }
-    }
-  }
 }
 
 function render() {
@@ -260,6 +233,7 @@ function render() {
 }
 
 function run() {
+  track('run');
   message = '';
   if (state.mode === '2d') {
     const parts = state.parts2d
@@ -287,7 +261,6 @@ const example1d: Row1D[] = dims1d.map(([length, qty], i) => ({ label: t.ex[5 + i
 // Un input modificato aggiorna lo stato senza ridisegnare, per non perdere il cursore.
 app.addEventListener('input', (e) => {
   const el = e.target as HTMLInputElement;
-  if (el.dataset.project !== undefined) return;
   const value = el.type === 'checkbox' ? el.checked : el.dataset.dim !== undefined ? parseDim(el.value) || 0 : el.type === 'number' ? Number(el.value) || 0 : el.value;
   if (el.dataset.set) {
     const [group, key] = el.dataset.set.split('.') as ['sheet' | 'bar', string];
@@ -307,6 +280,7 @@ async function importFile(file: File) {
     if (is2d) state.parts2d = rows.map((r) => ({ label: r.label, length: r.nums[0], width: r.nums[1], qty: r.nums[2], rot: true }));
     else state.parts1d = rows.map((r) => ({ label: r.label, length: r.nums[0], qty: r.nums[1] }));
     message = t.importDone(rows.length);
+    track('import');
   } catch {
     message = t.importFail;
   }
@@ -375,18 +349,8 @@ app.addEventListener('click', (e) => {
   } else if (el.dataset.act === 'import-open') {
     return openImport();
   } else if (el.dataset.act === 'save-project') {
-    saveProject();
-  } else if (el.dataset.load) {
-    state = loadProjects()[Number(el.dataset.load)].state;
-    result = null;
-    projectMsg = '';
-    overLimit = false;
-  } else if (el.dataset.drop) {
-    const list = loadProjects();
-    list.splice(Number(el.dataset.drop), 1);
-    try { localStorage.setItem(PROJECTS, JSON.stringify(list)); } catch { /* nessun salvataggio */ }
-    overLimit = false;
-    projectMsg = '';
+    overLimit = true;
+    track('limit');
   } else if (el.dataset.act === 'run') {
     save();
     return run();
@@ -406,8 +370,10 @@ if (hero) {
   hero.innerHTML = sheetSvg(demo.sheets[0], defaults.stockLength, defaults.stockWidth, numbering(demo.sheets.flatMap((sh) => sh.placed)), 2);
 }
 document.querySelector('[data-hero-example]')?.addEventListener('click', () => {
+  track('example');
   state.mode = '2d';
   state.parts2d = example2d.map((r) => ({ ...r }));
   save();
   run();
 });
+track('view');
