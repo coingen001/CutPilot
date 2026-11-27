@@ -3,19 +3,46 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Zuschnittoptimierung online – Platten und Stangen | CutPilot</title>
-    <meta name="description" content="Zuschnitt für Platten und Stangen kostenlos optimieren: Sägeblattstärke, Besäumschnitt und Maserung berücksichtigt, Schnittplan als PDF." />
+    <title>Zuschnittoptimierung online für Platten und Stangen | CutPilot</title>
+    <meta name="description" content="Zuschnitt für Platten und Stangen kostenlos optimieren: Sägeblattstärke, Besäumschnitt und Maserung berücksichtigt, Schnittplan zum Ausdrucken." />
+    <meta name="theme-color" content="#095441" />
+    <link rel="icon" type="image/png" href="../src/assets/icon.png" />
   </head>
   <body>
     <header class="site">
-      <span class="brand">CutPilot</span>
-      <nav><a href="../de/" aria-current="page">Deutsch</a><a href="../it/">Italiano</a></nav>
+      <a class="brand" href="./"><img src="../src/assets/logo.png" alt="CutPilot" width="180" height="50" /></a>
+      <nav aria-label="Sprache"><a href="../de/" aria-current="page">Deutsch</a><a href="../it/">Italiano</a></nav>
     </header>
     <main>
-      <h1>Zuschnittoptimierung für Platten und Stangen</h1>
-      <p class="lead">Zuschnittliste eingeben oder aus Excel importieren. Der Schnittplan berücksichtigt Sägeblattstärke, Besäumschnitt und Maserung und zeigt, wie viel Material Sie brauchen.</p>
-      <div id="app"></div>
+      <section class="hero">
+        <div class="hero-text">
+          <h1>Weniger Verschnitt, Schnittplan in Sekunden</h1>
+          <p class="lead">Zuschnittliste eingeben oder aus Excel importieren. CutPilot verteilt die Teile auf Platten und Stangen und zeigt, wie viel Material Sie wirklich brauchen.</p>
+          <div class="cta">
+            <a class="btn primary" href="#tool">Zuschnittliste eingeben</a>
+            <button class="btn" data-hero-example>Beispiel ansehen</button>
+          </div>
+          <ul class="facts"><li>Kostenlos und ohne Anmeldung</li><li>Ihre Daten bleiben im Browser</li><li>Import aus Excel und CSV</li></ul>
+        </div>
+        <figure class="hero-figure">
+          <div id="hero-figure"></div>
+          <figcaption>Ein echter Schnittplan: Kleiderschrank mit 13 Teilen, Platte 1 von 2.</figcaption>
+        </figure>
+      </section>
+      <section id="tool" class="tool">
+        <h2>Ihr Zuschnitt</h2>
+        <div id="app"></div>
+      </section>
+      <section class="explain">
+        <h2>Was der Schnittplan berücksichtigt</h2>
+        <dl><div><dt>Sägeblattstärke</dt><dd>Jeder Schnitt kostet Material. Zwischen zwei Teilen bleibt immer die Breite des Sägeblatts frei.</dd></div><div><dt>Besäumschnitt</dt><dd>Beschädigte Plattenkanten werden vorab abgezogen, damit jedes Teil aus sauberem Material kommt.</dd></div><div><dt>Maserung</dt><dd>Bei Dekorplatten legen Sie pro Teil fest, ob es gedreht werden darf.</dd></div><div><dt>Durchgehende Schnitte</dt><dd>Alle Schnitte laufen von Kante zu Kante, passend für Formatkreissäge und Plattenaufteilsäge.</dd></div></dl>
+      </section>
     </main>
+    <footer class="site">
+      <img src="../src/assets/logo-white.png" alt="CutPilot" width="150" height="42" />
+      <p>Vorschauversion. Ihre Zuschnittliste wird nur in Ihrem Browser verarbeitet und nicht übertragen.</p>
+      <nav aria-label="Sprache"><a href="../de/">Deutsch</a><a href="../it/">Italiano</a></nav>
+    </footer>
     <script type="module" src="../src/main.ts"></script>
   </body>
 </html>

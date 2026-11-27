@@ -4,18 +4,45 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Ottimizzazione taglio pannelli e barre online | CutPilot</title>
-    <meta name="description" content="Ottimizza gratis il taglio di pannelli e barre: spessore lama, rifilo e venatura inclusi, schema di taglio in PDF." />
+    <meta name="description" content="Ottimizza gratis il taglio di pannelli e barre: spessore lama, rifilo e venatura inclusi, schema di taglio da stampare." />
+    <meta name="theme-color" content="#095441" />
+    <link rel="icon" type="image/png" href="../src/assets/icon.png" />
   </head>
   <body>
     <header class="site">
-      <span class="brand">CutPilot</span>
-      <nav><a href="../de/">Deutsch</a><a href="../it/" aria-current="page">Italiano</a></nav>
+      <a class="brand" href="./"><img src="../src/assets/logo.png" alt="CutPilot" width="180" height="50" /></a>
+      <nav aria-label="Lingua"><a href="../de/">Deutsch</a><a href="../it/" aria-current="page">Italiano</a></nav>
     </header>
     <main>
-      <h1>Ottimizzazione del taglio di pannelli e barre</h1>
-      <p class="lead">Inserisci la distinta di taglio o importala da Excel. Lo schema tiene conto di spessore lama, rifilo e venatura e ti dice quanto materiale serve.</p>
-      <div id="app"></div>
+      <section class="hero">
+        <div class="hero-text">
+          <h1>Meno sfrido, schema di taglio in pochi secondi</h1>
+          <p class="lead">Inserisci la distinta di taglio o importala da Excel. CutPilot distribuisce i pezzi su pannelli e barre e ti dice quanto materiale serve davvero.</p>
+          <div class="cta">
+            <a class="btn primary" href="#tool">Inserisci la distinta</a>
+            <button class="btn" data-hero-example>Guarda un esempio</button>
+          </div>
+          <ul class="facts"><li>Gratis e senza registrazione</li><li>I tuoi dati restano nel browser</li><li>Import da Excel e CSV</li></ul>
+        </div>
+        <figure class="hero-figure">
+          <div id="hero-figure"></div>
+          <figcaption>Uno schema vero: armadio da 13 pezzi, pannello 1 di 2.</figcaption>
+        </figure>
+      </section>
+      <section id="tool" class="tool">
+        <h2>Il tuo taglio</h2>
+        <div id="app"></div>
+      </section>
+      <section class="explain">
+        <h2>Di cosa tiene conto lo schema</h2>
+        <dl><div><dt>Spessore lama</dt><dd>Ogni taglio consuma materiale. Tra due pezzi resta sempre libera la larghezza della lama.</dd></div><div><dt>Rifilo</dt><dd>I bordi rovinati del pannello vengono tolti prima, così ogni pezzo esce da materiale pulito.</dd></div><div><dt>Venatura</dt><dd>Sui pannelli decorativi scegli pezzo per pezzo se può essere ruotato.</dd></div><div><dt>Tagli passanti</dt><dd>Tutti i tagli vanno da bordo a bordo, adatti a squadratrice e sezionatrice.</dd></div></dl>
+      </section>
     </main>
+    <footer class="site">
+      <img src="../src/assets/logo-white.png" alt="CutPilot" width="150" height="42" />
+      <p>Versione di anteprima. La distinta viene elaborata solo nel tuo browser e non viene inviata.</p>
+      <nav aria-label="Lingua"><a href="../de/">Deutsch</a><a href="../it/">Italiano</a></nav>
+    </footer>
     <script type="module" src="../src/main.ts"></script>
   </body>
 </html>

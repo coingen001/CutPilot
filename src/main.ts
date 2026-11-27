@@ -1,3 +1,5 @@
+import '@fontsource-variable/outfit';
+import '@fontsource-variable/figtree';
 import './style.css';
 import { optimize1D, type Result1D } from './engine/cut1d';
 import { optimize2D, type Result2D } from './engine/cut2d';
@@ -39,7 +41,8 @@ let result: { kind: '2d'; data: Result2D } | { kind: '1d'; data: Result1D } | nu
 
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
 const fmt = (n: number) => String(+n.toFixed(1)).replace('.', ',');
-const hue = (label: string) => [...label].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 360, 7);
+const TINTS = ['#cfe3d8', '#f6dfb4', '#dde6ea', '#a9cdbb', '#fbeed3', '#e7eae3', '#8fbfa8', '#eccf94'];
+const tint = (n: number) => TINTS[(n - 1) % TINTS.length];
 const num = (key: string, value: number, labelText: string) =>
   `<label>${labelText}<input type="number" inputmode="decimal" min="0" step="any" data-set="${key}" value="${value || ''}"></label>`;
 
@@ -66,35 +69,56 @@ function partsTable(): string {
   }<th></th></tr></thead><tbody>${rows}</tbody></table>`;
 }
 
-function sheetSvg(sheet: Result2D['sheets'][number]): string {
-  const { stockLength: L, stockWidth: W } = state.sheet;
-  const fs = Math.max(L, W) / 50;
+type Piece = { label: string; length: number; width?: number; rotated?: boolean };
+
+// Ogni tipo di pezzo (descrizione + misure) riceve un numero, usato nello schema e nella legenda.
+function numbering(items: Piece[]) {
+  const ids = new Map<string, number>();
+  const key = (p: Piece) => {
+    const dims = p.width === undefined ? [p.length] : p.rotated ? [p.width, p.length] : [p.length, p.width];
+    return `${p.label}|${dims.join('x')}`;
+  };
+  for (const p of items) if (!ids.has(key(p))) ids.set(key(p), ids.size + 1);
+  return (p: Piece) => ids.get(key(p))!;
+}
+
+function sheetSvg(sheet: Result2D['sheets'][number], L: number, W: number, idOf: (p: Piece) => number, highlight = 0): string {
+  const fs = Math.max(L, W) / 46;
+  const m = fs * 2.4;
   const parts = sheet.placed
     .map((p) => {
-      const showText = p.length > fs * 4.5 && p.width > fs * 2.6;
+      const n = idOf(p);
+      const big = p.length > fs * 5 && p.width > fs * 3.4;
+      const small = !big && p.length > fs * 1.6 && p.width > fs * 1.4;
       const cx = p.x + p.length / 2;
       const cy = p.y + p.width / 2;
-      return `<rect x="${p.x}" y="${p.y}" width="${p.length}" height="${p.width}" fill="hsl(${hue(p.label)} 70% 86%)" stroke="#333" stroke-width="${fs / 8}"/>${
-        showText
-          ? `<text x="${cx}" y="${cy - fs * 0.2}" font-size="${fs}" text-anchor="middle">${esc(p.label)}</text><text x="${cx}" y="${cy + fs}" font-size="${fs * 0.85}" text-anchor="middle" fill="#444">${fmt(p.length)}×${fmt(p.width)}</text>`
-          : ''
+      const fill = n === highlight ? '#e39930' : tint(n);
+      return `<rect x="${p.x}" y="${p.y}" width="${p.length}" height="${p.width}" fill="${fill}" stroke="#0f3f31" stroke-width="${fs / 9}"/>${
+        big
+          ? `<text x="${cx}" y="${cy - fs * 0.15}" font-size="${fs * 1.5}" font-weight="700" text-anchor="middle">${n}</text><text x="${cx}" y="${cy + fs * 1.15}" font-size="${fs * 0.82}" text-anchor="middle" fill="#3c4a44">${fmt(p.length)} × ${fmt(p.width)}</text>`
+          : small
+            ? `<text x="${cx}" y="${cy + fs * 0.4}" font-size="${fs * 1.1}" font-weight="700" text-anchor="middle">${n}</text>`
+            : ''
       }`;
     })
     .join('');
-  const off = sheet.offcuts[0];
-  const offcut = off
-    ? `<rect x="${off.x}" y="${off.y}" width="${off.length}" height="${off.width}" fill="none" stroke="#888" stroke-dasharray="${fs / 2}" stroke-width="${fs / 8}"/>`
-    : '';
-  return `<svg viewBox="0 0 ${L} ${W}" class="sheet"><rect width="${L}" height="${W}" fill="#f4f1ea" stroke="#333" stroke-width="${fs / 5}"/>${offcut}${parts}</svg>`;
+  const offcuts = sheet.offcuts.map((o) => `<rect x="${o.x}" y="${o.y}" width="${o.length}" height="${o.width}" fill="url(#hatch)"/>`).join('');
+  return `<svg viewBox="${-m} ${-m} ${L + m * 1.15} ${W + m * 1.15}" class="sheet" role="img"><defs><pattern id="hatch" width="${fs}" height="${fs}" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="${fs}" stroke="#b9c4be" stroke-width="${fs / 7}"/></pattern></defs><text x="${L / 2}" y="${-m * 0.4}" font-size="${fs}" text-anchor="middle" fill="#5d6b64">${fmt(L)} mm</text><text transform="translate(${-m * 0.4} ${W / 2}) rotate(-90)" font-size="${fs}" text-anchor="middle" fill="#5d6b64">${fmt(W)} mm</text><rect width="${L}" height="${W}" fill="#fff" stroke="#0f3f31" stroke-width="${fs / 4}"/>${offcuts}${parts}</svg>`;
 }
 
-function grouped(items: { label: string; length: number; width?: number; rotated?: boolean }[]): string {
-  const counts = new Map<string, number>();
+function legend(items: Piece[], idOf: (p: Piece) => number): string {
+  const rows = new Map<number, { text: string; count: number }>();
   for (const p of items) {
-    const key = `${p.label ? esc(p.label) + ' ' : ''}${fmt(p.length)}${p.width ? '×' + fmt(p.width) : ''}${p.rotated ? ` (${t.rotated})` : ''}`;
-    counts.set(key, (counts.get(key) ?? 0) + 1);
+    const n = idOf(p);
+    const dims = p.width === undefined ? fmt(p.length) : p.rotated ? `${fmt(p.width)} × ${fmt(p.length)}` : `${fmt(p.length)} × ${fmt(p.width)}`;
+    const row = rows.get(n) ?? { text: `${p.label ? esc(p.label) + ' · ' : ''}${dims} mm${p.rotated ? ` (${t.rotated})` : ''}`, count: 0 };
+    row.count++;
+    rows.set(n, row);
   }
-  return `<ul class="cuts">${[...counts].map(([k, n]) => `<li>${n}× ${k}</li>`).join('')}</ul>`;
+  return `<ul class="legend">${[...rows]
+    .sort((x, y) => x[0] - y[0])
+    .map(([n, r]) => `<li><span class="num" style="background:${tint(n)}">${n}</span><span>${r.text}</span><b>${r.count}×</b></li>`)
+    .join('')}</ul>`;
 }
 
 function results(): string {
@@ -106,32 +130,35 @@ function results(): string {
 
   if (result.kind === '2d') {
     const { sheets, wastePct } = result.data;
+    const { stockLength: L, stockWidth: W } = state.sheet;
+    const idOf = numbering(sheets.flatMap((s) => s.placed));
     const best = sheets.flatMap((s) => s.offcuts.slice(0, 1)).sort((a, b) => b.length * b.width - a.length * a.width)[0];
     return `${unplaced}<div class="stats">${stat(t.sheets, String(sheets.length))}${stat(t.waste, fmt(wastePct) + ' %')}${stat(
       t.placed,
       String(sheets.reduce((s, sh) => s + sh.placed.length, 0)),
-    )}${best ? stat(t.bestOffcut, `${fmt(best.length)}×${fmt(best.width)}`) : ''}</div>${sheets
-      .map((s, i) => `<article class="plan"><h3>${t.sheetN(i + 1, sheets.length)}</h3>${sheetSvg(s)}${grouped(s.placed)}</article>`)
+    )}${best ? stat(t.bestOffcut, `${fmt(best.length)} × ${fmt(best.width)}`) : ''}</div>${sheets
+      .map((s, i) => `<article class="plan"><h3>${t.sheetN(i + 1, sheets.length)}</h3>${sheetSvg(s, L, W, idOf)}${legend(s.placed, idOf)}</article>`)
       .join('')}`;
   }
 
   const { bars, wastePct } = result.data;
   const L = state.bar.stockLength;
-  const h = L / 40;
+  const h = L / 26;
+  const idOf = numbering(bars.flatMap((b) => b.cuts));
   return `${unplaced}<div class="stats">${stat(t.bars, String(bars.length))}${stat(t.waste, fmt(wastePct) + ' %')}${stat(
     t.placed,
     String(bars.reduce((s, b) => s + b.cuts.length, 0)),
   )}</div>${bars
     .map(
       (b, i) =>
-        `<article class="plan"><h3>${t.barN(i + 1, bars.length)} · ${t.rest} ${fmt(b.rest)} mm</h3><svg viewBox="0 0 ${L} ${h}" class="bar"><rect width="${L}" height="${h}" fill="#f4f1ea" stroke="#333" stroke-width="${h / 20}"/>${b.cuts
+        `<article class="plan"><h3>${t.barN(i + 1, bars.length)} · ${t.rest} ${fmt(b.rest)} mm</h3><svg viewBox="0 0 ${L} ${h}" class="bar" role="img"><defs><pattern id="hatch1" width="${h / 5}" height="${h / 5}" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="${h / 5}" stroke="#b9c4be" stroke-width="${h / 30}"/></pattern></defs><rect width="${L}" height="${h}" fill="url(#hatch1)" stroke="#0f3f31" stroke-width="${h / 14}"/>${b.cuts
           .map(
             (c) =>
-              `<rect x="${c.offset}" y="0" width="${c.length}" height="${h}" fill="hsl(${hue(c.label + c.length)} 70% 86%)" stroke="#333" stroke-width="${h / 20}"/>${
-                c.length > h * 2.2 ? `<text x="${c.offset + c.length / 2}" y="${h * 0.65}" font-size="${h * 0.45}" text-anchor="middle">${fmt(c.length)}</text>` : ''
+              `<rect x="${c.offset}" y="0" width="${c.length}" height="${h}" fill="${tint(idOf(c))}" stroke="#0f3f31" stroke-width="${h / 22}"/>${
+                c.length > h * 1.1 ? `<text x="${c.offset + c.length / 2}" y="${h * 0.66}" font-size="${h * 0.46}" font-weight="700" text-anchor="middle">${idOf(c)}</text>` : ''
               }`,
           )
-          .join('')}</svg>${grouped(b.cuts)}</article>`,
+          .join('')}</svg>${legend(b.cuts, idOf)}</article>`,
     )
     .join('')}`;
 }
@@ -268,3 +295,16 @@ app.addEventListener('click', (e) => {
 });
 
 render();
+
+// Figura d'apertura: uno schema vero, calcolato dal motore sull'esempio dell'armadio.
+const hero = document.getElementById('hero-figure');
+if (hero) {
+  const demo = optimize2D(example2d.map((r) => ({ label: r.label, length: r.length, width: r.width, qty: r.qty })), { stockLength: 2800, stockWidth: 2070, kerf: 3.2, trim: 10 });
+  hero.innerHTML = sheetSvg(demo.sheets[0], 2800, 2070, numbering(demo.sheets.flatMap((sh) => sh.placed)), 2);
+}
+document.querySelector('[data-hero-example]')?.addEventListener('click', () => {
+  state.mode = '2d';
+  state.parts2d = example2d.map((r) => ({ ...r }));
+  save();
+  run();
+});

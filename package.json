@@ -11,6 +11,8 @@
     "bench": "vite-node bench/run.ts"
   },
   "dependencies": {
+    "@fontsource-variable/figtree": "^5.3.0",
+    "@fontsource-variable/outfit": "^5.3.0",
     "read-excel-file": "^5.8.6"
   },
   "devDependencies": {
