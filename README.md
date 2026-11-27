@@ -1,6 +1,6 @@
 # CutPilot
 
-Ottimizzatore di taglio per pannelli (2D) e barre/profilati (1D), in tedesco e italiano.
+Ottimizzatore di taglio per pannelli (2D) e barre/profilati (1D), in tedesco, italiano, inglese e francese.
 Nome di progetto provvisorio.
 
 ## Cosa fa
@@ -24,7 +24,7 @@ npm run build    # sito statico in dist/
 - `src/engine/` – motore, funzioni pure senza dipendenze (`cut1d.ts`, `cut2d.ts`)
 - `tests/` – test del motore, inclusi 500 casi casuali con controllo di validità
 - `src/main.ts`, `src/i18n.ts`, `src/import.ts` – interfaccia
-- `de/`, `it/` – una pagina per lingua
+- `de/`, `it/`, `en/`, `fr/` – pagine per lingua, con note legali e privacy
 
 ## Limiti noti
 

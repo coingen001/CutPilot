@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Cut list optimizer online for panels and bars | CutPilot</title>
+    <meta name="description" content="Optimize panel and bar cutting for free: blade thickness, edge trim and grain direction included, printable cutting diagram." />
+    <meta name="theme-color" content="#095441" />
+    <link rel="icon" type="image/png" href="../src/assets/icon.png" />
+  </head>
+  <body>
+    <header class="site">
+      <a class="brand" href="./"><img src="../src/assets/logo.png" alt="CutPilot" width="180" height="50" /></a>
+      <nav aria-label="Language"><a href="../de/">DE</a><a href="../it/">IT</a><a href="../en/" aria-current="page">EN</a><a href="../fr/">FR</a></nav>
+    </header>
+    <main>
+      <section class="hero">
+        <div class="hero-text">
+          <h1>Less waste, a cutting plan in seconds</h1>
+          <p class="lead">Type in your cut list or import it from Excel. CutPilot lays the parts out on panels and bars and shows how much material you really need.</p>
+          <div class="cta">
+            <a class="btn primary" href="#tool">Enter your cut list</a>
+            <button class="btn" data-hero-example>See an example</button>
+          </div>
+          <ul class="facts"><li>Free, no sign-up</li><li>Your data stays in your browser</li><li>Import from Excel and CSV</li></ul>
+        </div>
+        <figure class="hero-figure">
+          <div id="hero-figure"></div>
+          <figcaption>A real cutting plan: a 13-part wardrobe, panel 1 of 2.</figcaption>
+        </figure>
+      </section>
+      <section id="tool" class="tool">
+        <h2>Your cut</h2>
+        <div id="app"></div>
+      </section>
+      <section class="explain">
+        <h2>What the cutting plan accounts for</h2>
+        <dl><div><dt>Blade thickness</dt><dd>Every cut uses up material. The width of the blade always stays free between two parts.</dd></div><div><dt>Edge trim</dt><dd>Damaged panel edges are removed first, so every part comes from clean material.</dd></div><div><dt>Grain direction</dt><dd>On decorative panels you decide part by part whether it may be rotated.</dd></div><div><dt>Through cuts</dt><dd>Every cut runs edge to edge, as panel saws and sliding table saws require.</dd></div></dl>
+      </section>
+    </main>
+    <footer class="site">
+      <img src="../src/assets/logo-white.png" alt="CutPilot" width="150" height="42" />
+      <p>Preview version. Your cut list is processed only in your browser and is never sent anywhere.</p>
+      <nav class="legal"><a href="./legal-notice.html">Legal notice</a><a href="./privacy.html">Privacy</a></nav>
+    </footer>
+    <script type="module" src="../src/main.ts"></script>
+  </body>
+</html>

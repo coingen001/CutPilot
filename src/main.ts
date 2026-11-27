@@ -6,7 +6,7 @@ import { optimize2D, type Result2D } from './engine/cut2d';
 import { dict, type Lang } from './i18n';
 import { readRows, rowsToParts } from './import';
 
-const lang: Lang = document.documentElement.lang === 'it' ? 'it' : 'de';
+const lang: Lang = document.documentElement.lang in dict ? (document.documentElement.lang as Lang) : 'en';
 const t = dict[lang];
 const app = document.getElementById('app')!;
 const STORE = 'cutpilot-v1';
@@ -40,7 +40,7 @@ let message = '';
 let result: { kind: '2d'; data: Result2D } | { kind: '1d'; data: Result1D } | null = null;
 
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
-const fmt = (n: number) => String(+n.toFixed(1)).replace('.', ',');
+const fmt = (n: number) => (lang === 'en' ? String(+n.toFixed(1)) : String(+n.toFixed(1)).replace('.', ','));
 const TINTS = ['#cfe3d8', '#f6dfb4', '#dde6ea', '#a9cdbb', '#fbeed3', '#e7eae3', '#8fbfa8', '#eccf94'];
 const tint = (n: number) => TINTS[(n - 1) % TINTS.length];
 const num = (key: string, value: number, labelText: string) =>
@@ -218,16 +218,16 @@ function run() {
 }
 
 const example2d: Row2D[] = [
-  { label: lang === 'it' ? 'Fianco' : 'Seite', length: 2000, width: 560, qty: 2, rot: false },
-  { label: lang === 'it' ? 'Ripiano' : 'Boden', length: 764, width: 540, qty: 5, rot: false },
-  { label: lang === 'it' ? 'Cielo/fondo' : 'Deckel/Sockel', length: 800, width: 560, qty: 2, rot: false },
-  { label: lang === 'it' ? 'Anta' : 'Tür', length: 1996, width: 397, qty: 2, rot: false },
-  { label: lang === 'it' ? 'Zoccolo' : 'Blende', length: 764, width: 100, qty: 2, rot: true },
+  { label: t.ex[0], length: 2000, width: 560, qty: 2, rot: false },
+  { label: t.ex[1], length: 764, width: 540, qty: 5, rot: false },
+  { label: t.ex[2], length: 800, width: 560, qty: 2, rot: false },
+  { label: t.ex[3], length: 1996, width: 397, qty: 2, rot: false },
+  { label: t.ex[4], length: 764, width: 100, qty: 2, rot: true },
 ];
 const example1d: Row1D[] = [
-  { label: lang === 'it' ? 'Montante' : 'Pfosten', length: 2100, qty: 6 },
-  { label: lang === 'it' ? 'Traverso' : 'Riegel', length: 1250, qty: 8 },
-  { label: lang === 'it' ? 'Rinforzo' : 'Strebe', length: 640, qty: 10 },
+  { label: t.ex[5], length: 2100, qty: 6 },
+  { label: t.ex[6], length: 1250, qty: 8 },
+  { label: t.ex[7], length: 640, qty: 10 },
 ];
 
 // Un input modificato aggiorna lo stato senza ridisegnare, per non perdere il cursore.

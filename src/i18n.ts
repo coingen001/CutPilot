@@ -1,4 +1,4 @@
-export type Lang = 'de' | 'it';
+export type Lang = 'de' | 'it' | 'en' | 'fr';
 
 const de = {
   tab2d: 'Platten (2D)',
@@ -37,6 +37,7 @@ const de = {
   empty: 'Bitte mindestens ein Teil mit Maßen und Anzahl eingeben.',
   remove: 'Zeile löschen',
   rotated: 'gedreht',
+  ex: ['Seite', 'Boden', 'Deckel/Sockel', 'Tür', 'Blende', 'Pfosten', 'Riegel', 'Strebe'],
 };
 
 const it: typeof de = {
@@ -76,7 +77,89 @@ const it: typeof de = {
   empty: 'Inserisci almeno un pezzo con misure e quantità.',
   remove: 'Elimina riga',
   rotated: 'ruotato',
+  ex: ['Fianco', 'Ripiano', 'Cielo/fondo', 'Anta', 'Zoccolo', 'Montante', 'Traverso', 'Rinforzo'],
 };
 
-export const dict = { de, it };
+
+const en: typeof de = {
+  tab2d: 'Panels (2D)',
+  tab1d: 'Bars & profiles (1D)',
+  settings: 'Material',
+  stockLength: 'Length (mm)',
+  stockWidth: 'Width (mm)',
+  kerf: 'Blade thickness (mm)',
+  trim: 'Edge trim per side (mm)',
+  trim1d: 'Trim at bar start (mm)',
+  grain: 'Panel has grain (set rotation per part)',
+  parts: 'Cut list',
+  label: 'Description',
+  length: 'Length',
+  width: 'Width',
+  qty: 'Quantity',
+  rotate: 'can rotate',
+  addRow: 'Add row',
+  importFile: 'Import Excel/CSV',
+  example: 'Load example',
+  clear: 'Clear list',
+  run: 'Optimize cutting',
+  print: 'Print / save as PDF',
+  importHint: 'Columns: description, length, width, quantity (for bars: description, length, quantity).',
+  importDone: (n) => `${n} rows imported.`,
+  importFail: 'The file could not be read.',
+  sheets: 'Panels',
+  bars: 'Bars',
+  waste: 'Waste',
+  placed: 'Parts placed',
+  bestOffcut: 'Largest offcut',
+  sheetN: (n, total) => `Panel ${n} of ${total}`,
+  barN: (n, total) => `Bar ${n} of ${total}`,
+  rest: 'Remainder',
+  unplaced: 'These parts are larger than the material and were not placed:',
+  empty: 'Enter at least one part with dimensions and quantity.',
+  remove: 'Delete row',
+  rotated: 'rotated',
+  ex: ['Side', 'Shelf', 'Top/bottom', 'Door', 'Plinth', 'Post', 'Rail', 'Brace'],
+};
+
+const fr: typeof de = {
+  tab2d: 'Panneaux (2D)',
+  tab1d: 'Barres et profilés (1D)',
+  settings: 'Matériau',
+  stockLength: 'Longueur (mm)',
+  stockWidth: 'Largeur (mm)',
+  kerf: 'Épaisseur de lame (mm)',
+  trim: 'Délignage par bord (mm)',
+  trim1d: 'Coupe de départ de la barre (mm)',
+  grain: 'Le panneau a un fil (rotation à définir pièce par pièce)',
+  parts: 'Liste de débit',
+  label: 'Désignation',
+  length: 'Longueur',
+  width: 'Largeur',
+  qty: 'Quantité',
+  rotate: 'rotation',
+  addRow: 'Ajouter une ligne',
+  importFile: 'Importer Excel/CSV',
+  example: "Charger l'exemple",
+  clear: 'Vider la liste',
+  run: 'Optimiser la découpe',
+  print: 'Imprimer / enregistrer en PDF',
+  importHint: 'Colonnes : désignation, longueur, largeur, quantité (pour les barres : désignation, longueur, quantité).',
+  importDone: (n) => `${n} lignes importées.`,
+  importFail: "Le fichier n'a pas pu être lu.",
+  sheets: 'Panneaux',
+  bars: 'Barres',
+  waste: 'Chutes',
+  placed: 'Pièces placées',
+  bestOffcut: 'Plus grande chute',
+  sheetN: (n, total) => `Panneau ${n} sur ${total}`,
+  barN: (n, total) => `Barre ${n} sur ${total}`,
+  rest: 'Reste',
+  unplaced: "Ces pièces sont plus grandes que le matériau et n'ont pas été placées :",
+  empty: 'Saisissez au moins une pièce avec ses dimensions et sa quantité.',
+  remove: 'Supprimer la ligne',
+  rotated: 'tournée',
+  ex: ['Côté', 'Étagère', 'Dessus/dessous', 'Porte', 'Plinthe', 'Montant', 'Traverse', 'Renfort'],
+};
+
+export const dict = { de, it, en, fr };
 export type Dict = typeof de;
